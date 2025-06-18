@@ -68,7 +68,7 @@ export function AppSidebar() {
   return (
     <Sidebar className="border-r border-gray-200 bg-white">
       <SidebarHeader className="p-6 border-b border-gray-100">
-        <div className="flex items-center space-x-3">
+        <div className="flex items-center space-x-3 mb-4">
           <div className="w-8 h-8 bg-gradient-to-br from-primary-500 to-primary-700 rounded-lg flex items-center justify-center">
             <FileText className="w-5 h-5 text-white" />
           </div>
@@ -77,6 +77,10 @@ export function AppSidebar() {
             <p className="text-sm text-gray-500">Gestion de facturation</p>
           </div>
         </div>
+        <Button className="w-full bg-primary-600 hover:bg-primary-700 text-white">
+          <Plus className="w-4 h-4 mr-2" />
+          Nouvelle Facture
+        </Button>
       </SidebarHeader>
 
       <SidebarContent className="p-4">
@@ -128,10 +132,9 @@ export function AppSidebar() {
       </SidebarContent>
 
       <SidebarFooter className="p-4 border-t border-gray-100">
-        <Button className="w-full bg-primary-600 hover:bg-primary-700 text-white">
-          <Plus className="w-4 h-4 mr-2" />
-          Nouvelle Facture
-        </Button>
+        <div className="text-xs text-gray-500 text-center">
+          Version 1.0.0
+        </div>
       </SidebarFooter>
     </Sidebar>
   );
