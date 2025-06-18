@@ -1,5 +1,5 @@
 
-import { Client, Product, Invoice, DashboardStats } from "@/types";
+import { Client, Product, Invoice, DashboardStats, Payment } from "@/types";
 
 export const mockClients: Client[] = [
   {
@@ -130,6 +130,40 @@ export const mockInvoices: Invoice[] = [
     tax: 359.60,
     total: 2157.60,
     status: 'overdue'
+  }
+];
+
+export const mockPayments: Payment[] = [
+  {
+    id: '1',
+    invoiceId: '1',
+    amount: 1440.00,
+    date: new Date('2024-06-18'),
+    method: 'card',
+    reference: 'TXN-20240618-001'
+  },
+  {
+    id: '2',
+    invoiceId: '2',
+    amount: 431.86,
+    date: new Date('2024-06-17'),
+    method: 'transfer',
+    reference: 'VIR-20240617-002'
+  },
+  {
+    id: '3',
+    invoiceId: '1',
+    amount: 500.00,
+    date: new Date('2024-05-15'),
+    method: 'cash'
+  },
+  {
+    id: '4',
+    invoiceId: '2',
+    amount: 300.00,
+    date: new Date('2024-05-10'),
+    method: 'check',
+    reference: 'CHQ-123456'
   }
 ];
 
