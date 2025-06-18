@@ -1,4 +1,5 @@
 
+import { useState } from "react";
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/layout/AppSidebar";
 import { Button } from "@/components/ui/button";
@@ -12,11 +13,68 @@ import {
   Phone, 
   MapPin,
   Euro,
-  AlertTriangle
+  AlertTriangle,
+  Edit,
+  Trash2,
+  FileText
 } from "lucide-react";
 import { mockClients } from "@/data/mockData";
+import { ClientForm } from "@/components/forms/ClientForm";
+import { DeleteConfirmModal } from "@/components/modals/DeleteConfirmModal";
+import { Client } from "@/types";
+import { toast } from "sonner";
 
 const Clients = () => {
+  const [clients, setClients] = useState(mockClients);
+  const [showClientForm, setShowClientForm] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [selectedClient, setSelectedClient] = useState<Client | null>(null);
+  const [editingClient, setEditingClient] = useState<Client | null>(null);
+
+  const handleCreateClient = () => {
+    setEditingClient(null);
+    setShowClientForm(true);
+  };
+
+  const handleEditClient = (client: Client) => {
+    setEditingClient(client);
+    setShowClientForm(true);
+  };
+
+  const handleDeleteClient = (client: Client) => {
+    setSelectedClient(client);
+    setShowDeleteModal(true);
+  };
+
+  const handleSubmitClient = (clientData: Partial<Client>) => {
+    if (editingClient) {
+      setClients(prev => prev.map(client => 
+        client.id === editingClient.id 
+          ? { ...client, ...clientData }
+          : client
+      ));
+      toast.success("Client modifié avec succès");
+    } else {
+      const newClient: Client = {
+        id: Date.now().toString(),
+        createdAt: new Date(),
+        totalInvoices: 0,
+        totalAmount: 0,
+        pendingAmount: 0,
+        ...clientData as Client
+      };
+      setClients(prev => [...prev, newClient]);
+      toast.success("Client créé avec succès");
+    }
+  };
+
+  const confirmDeleteClient = () => {
+    if (selectedClient) {
+      setClients(prev => prev.filter(client => client.id !== selectedClient.id));
+      toast.success("Client supprimé avec succès");
+    }
+  };
+
   return (
     <SidebarProvider>
       <div className="min-h-screen flex w-full bg-gray-50">
@@ -35,7 +93,7 @@ const Clients = () => {
                   <p className="text-gray-600">Gérez vos clients et leurs informations</p>
                 </div>
               </div>
-              <Button className="bg-primary-600 hover:bg-primary-700 text-white">
+              <Button onClick={handleCreateClient} className="bg-primary-600 hover:bg-primary-700 text-white">
                 <Plus className="w-4 h-4 mr-2" />
                 Nouveau Client
               </Button>
@@ -125,14 +183,24 @@ const Clients = () => {
 
             {/* Clients List */}
             <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
-              {mockClients.map((client) => (
+              {clients.map((client) => (
                 <Card key={client.id} className="hover:shadow-md transition-shadow">
                   <CardHeader>
                     <CardTitle className="text-lg font-semibold text-gray-900 flex items-center justify-between">
                       {client.name}
-                      {client.pendingAmount > 0 && (
-                        <Badge variant="destructive">Impayé</Badge>
-                      )}
+                      <div className="flex items-center space-x-2">
+                        {client.pendingAmount > 0 && (
+                          <Badge variant="destructive">Impayé</Badge>
+                        )}
+                        <div className="flex space-x-1">
+                          <Button size="sm" variant="ghost" onClick={() => handleEditClient(client)}>
+                            <Edit className="w-4 h-4" />
+                          </Button>
+                          <Button size="sm" variant="ghost" onClick={() => handleDeleteClient(client)}>
+                            <Trash2 className="w-4 h-4" />
+                          </Button>
+                        </div>
+                      </div>
                     </CardTitle>
                   </CardHeader>
                   <CardContent>
@@ -165,9 +233,7 @@ const Clients = () => {
                       
                       <div className="flex space-x-2 pt-2">
                         <Button size="sm" variant="outline" className="flex-1">
-                          Voir Détails
-                        </Button>
-                        <Button size="sm" className="flex-1">
+                          <FileText className="w-4 h-4 mr-1" />
                           Nouvelle Facture
                         </Button>
                       </div>
@@ -178,6 +244,22 @@ const Clients = () => {
             </div>
           </div>
         </main>
+
+        {/* Modals */}
+        <ClientForm
+          open={showClientForm}
+          onOpenChange={setShowClientForm}
+          client={editingClient}
+          onSubmit={handleSubmitClient}
+        />
+
+        <DeleteConfirmModal
+          open={showDeleteModal}
+          onOpenChange={setShowDeleteModal}
+          title="Supprimer le client"
+          description={`Êtes-vous sûr de vouloir supprimer le client ${selectedClient?.name} ? Cette action supprimera également toutes les factures associées.`}
+          onConfirm={confirmDeleteClient}
+        />
       </div>
     </SidebarProvider>
   );

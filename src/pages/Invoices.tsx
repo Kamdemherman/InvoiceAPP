@@ -1,8 +1,9 @@
 
+import { useState } from "react";
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/layout/AppSidebar";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { 
   FileText, 
@@ -13,15 +14,75 @@ import {
   User,
   Download,
   Mail,
-  Eye
+  Eye,
+  Edit,
+  Trash2
 } from "lucide-react";
 import { mockInvoices } from "@/data/mockData";
+import { InvoiceForm } from "@/components/forms/InvoiceForm";
+import { ViewInvoiceModal } from "@/components/modals/ViewInvoiceModal";
+import { DeleteConfirmModal } from "@/components/modals/DeleteConfirmModal";
+import { Invoice } from "@/types";
+import { toast } from "sonner";
 
 const Invoices = () => {
-  const totalInvoices = mockInvoices.length;
-  const paidInvoices = mockInvoices.filter(inv => inv.status === 'paid').length;
-  const pendingInvoices = mockInvoices.filter(inv => inv.status === 'sent').length;
-  const overdueInvoices = mockInvoices.filter(inv => inv.status === 'overdue').length;
+  const [invoices, setInvoices] = useState(mockInvoices);
+  const [showInvoiceForm, setShowInvoiceForm] = useState(false);
+  const [showViewModal, setShowViewModal] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [selectedInvoice, setSelectedInvoice] = useState<Invoice | null>(null);
+  const [editingInvoice, setEditingInvoice] = useState<Invoice | null>(null);
+
+  const totalInvoices = invoices.length;
+  const paidInvoices = invoices.filter(inv => inv.status === 'paid').length;
+  const pendingInvoices = invoices.filter(inv => inv.status === 'sent').length;
+  const overdueInvoices = invoices.filter(inv => inv.status === 'overdue').length;
+
+  const handleCreateInvoice = () => {
+    setEditingInvoice(null);
+    setShowInvoiceForm(true);
+  };
+
+  const handleEditInvoice = (invoice: Invoice) => {
+    setEditingInvoice(invoice);
+    setShowInvoiceForm(true);
+  };
+
+  const handleViewInvoice = (invoice: Invoice) => {
+    setSelectedInvoice(invoice);
+    setShowViewModal(true);
+  };
+
+  const handleDeleteInvoice = (invoice: Invoice) => {
+    setSelectedInvoice(invoice);
+    setShowDeleteModal(true);
+  };
+
+  const handleSubmitInvoice = (invoiceData: Partial<Invoice>) => {
+    if (editingInvoice) {
+      setInvoices(prev => prev.map(inv => 
+        inv.id === editingInvoice.id 
+          ? { ...inv, ...invoiceData }
+          : inv
+      ));
+      toast.success("Facture modifiée avec succès");
+    } else {
+      const newInvoice: Invoice = {
+        id: Date.now().toString(),
+        number: `FAC-2024-${String(invoices.length + 1).padStart(3, '0')}`,
+        ...invoiceData as Invoice
+      };
+      setInvoices(prev => [...prev, newInvoice]);
+      toast.success("Facture créée avec succès");
+    }
+  };
+
+  const confirmDeleteInvoice = () => {
+    if (selectedInvoice) {
+      setInvoices(prev => prev.filter(inv => inv.id !== selectedInvoice.id));
+      toast.success("Facture supprimée avec succès");
+    }
+  };
 
   const getStatusBadge = (status: string) => {
     switch (status) {
@@ -56,7 +117,7 @@ const Invoices = () => {
                   <p className="text-gray-600">Gérez toutes vos factures</p>
                 </div>
               </div>
-              <Button className="bg-primary-600 hover:bg-primary-700 text-white">
+              <Button onClick={handleCreateInvoice} className="bg-primary-600 hover:bg-primary-700 text-white">
                 <Plus className="w-4 h-4 mr-2" />
                 Nouvelle Facture
               </Button>
@@ -143,7 +204,7 @@ const Invoices = () => {
 
             {/* Invoices List */}
             <div className="space-y-4">
-              {mockInvoices.map((invoice) => (
+              {invoices.map((invoice) => (
                 <Card key={invoice.id} className="hover:shadow-md transition-shadow">
                   <CardContent className="p-6">
                     <div className="flex items-center justify-between">
@@ -183,9 +244,13 @@ const Invoices = () => {
                         </div>
                       </div>
                       <div className="flex items-center space-x-2 ml-6">
-                        <Button size="sm" variant="outline">
+                        <Button size="sm" variant="outline" onClick={() => handleViewInvoice(invoice)}>
                           <Eye className="w-4 h-4 mr-1" />
                           Voir
+                        </Button>
+                        <Button size="sm" variant="outline" onClick={() => handleEditInvoice(invoice)}>
+                          <Edit className="w-4 h-4 mr-1" />
+                          Modifier
                         </Button>
                         <Button size="sm" variant="outline">
                           <Download className="w-4 h-4 mr-1" />
@@ -194,6 +259,10 @@ const Invoices = () => {
                         <Button size="sm" variant="outline">
                           <Mail className="w-4 h-4 mr-1" />
                           Envoyer
+                        </Button>
+                        <Button size="sm" variant="outline" onClick={() => handleDeleteInvoice(invoice)}>
+                          <Trash2 className="w-4 h-4 mr-1" />
+                          Supprimer
                         </Button>
                       </div>
                     </div>
@@ -216,6 +285,28 @@ const Invoices = () => {
             </div>
           </div>
         </main>
+
+        {/* Modals */}
+        <InvoiceForm
+          open={showInvoiceForm}
+          onOpenChange={setShowInvoiceForm}
+          invoice={editingInvoice}
+          onSubmit={handleSubmitInvoice}
+        />
+
+        <ViewInvoiceModal
+          open={showViewModal}
+          onOpenChange={setShowViewModal}
+          invoice={selectedInvoice}
+        />
+
+        <DeleteConfirmModal
+          open={showDeleteModal}
+          onOpenChange={setShowDeleteModal}
+          title="Supprimer la facture"
+          description={`Êtes-vous sûr de vouloir supprimer la facture ${selectedInvoice?.number} ? Cette action est irréversible.`}
+          onConfirm={confirmDeleteInvoice}
+        />
       </div>
     </SidebarProvider>
   );

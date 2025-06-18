@@ -1,8 +1,9 @@
 
+import { useState } from "react";
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/layout/AppSidebar";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { 
   CreditCard, 
@@ -12,15 +13,67 @@ import {
   Calendar,
   FileText,
   TrendingUp,
-  DollarSign
+  DollarSign,
+  Edit,
+  Trash2
 } from "lucide-react";
 import { mockPayments, mockInvoices } from "@/data/mockData";
+import { PaymentForm } from "@/components/forms/PaymentForm";
+import { DeleteConfirmModal } from "@/components/modals/DeleteConfirmModal";
+import { Payment } from "@/types";
+import { toast } from "sonner";
 
 const Payments = () => {
-  const totalPayments = mockPayments.reduce((acc, payment) => acc + payment.amount, 0);
-  const paymentsThisMonth = mockPayments.filter(payment => 
+  const [payments, setPayments] = useState(mockPayments);
+  const [showPaymentForm, setShowPaymentForm] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [selectedPayment, setSelectedPayment] = useState<Payment | null>(null);
+  const [editingPayment, setEditingPayment] = useState<Payment | null>(null);
+
+  const totalPayments = payments.reduce((acc, payment) => acc + payment.amount, 0);
+  const paymentsThisMonth = payments.filter(payment => 
     payment.date.getMonth() === new Date().getMonth()
   ).reduce((acc, payment) => acc + payment.amount, 0);
+
+  const handleCreatePayment = () => {
+    setEditingPayment(null);
+    setShowPaymentForm(true);
+  };
+
+  const handleEditPayment = (payment: Payment) => {
+    setEditingPayment(payment);
+    setShowPaymentForm(true);
+  };
+
+  const handleDeletePayment = (payment: Payment) => {
+    setSelectedPayment(payment);
+    setShowDeleteModal(true);
+  };
+
+  const handleSubmitPayment = (paymentData: Partial<Payment>) => {
+    if (editingPayment) {
+      setPayments(prev => prev.map(payment => 
+        payment.id === editingPayment.id 
+          ? { ...payment, ...paymentData }
+          : payment
+      ));
+      toast.success("Paiement modifié avec succès");
+    } else {
+      const newPayment: Payment = {
+        id: Date.now().toString(),
+        ...paymentData as Payment
+      };
+      setPayments(prev => [...prev, newPayment]);
+      toast.success("Paiement enregistré avec succès");
+    }
+  };
+
+  const confirmDeletePayment = () => {
+    if (selectedPayment) {
+      setPayments(prev => prev.filter(payment => payment.id !== selectedPayment.id));
+      toast.success("Paiement supprimé avec succès");
+    }
+  };
 
   const getPaymentMethodIcon = (method: string) => {
     switch (method) {
@@ -70,7 +123,7 @@ const Payments = () => {
                   <p className="text-gray-600">Suivi des paiements reçus</p>
                 </div>
               </div>
-              <Button className="bg-primary-600 hover:bg-primary-700 text-white">
+              <Button onClick={handleCreatePayment} className="bg-primary-600 hover:bg-primary-700 text-white">
                 <Plus className="w-4 h-4 mr-2" />
                 Enregistrer Paiement
               </Button>
@@ -163,7 +216,7 @@ const Payments = () => {
 
             {/* Payments List */}
             <div className="space-y-4">
-              {mockPayments.map((payment) => {
+              {payments.map((payment) => {
                 const invoice = mockInvoices.find(inv => inv.id === payment.invoiceId);
                 return (
                   <Card key={payment.id} className="hover:shadow-md transition-shadow">
@@ -212,11 +265,13 @@ const Payments = () => {
                           </div>
                           
                           <div className="flex items-center space-x-2">
-                            <Button size="sm" variant="outline">
-                              Voir Facture
+                            <Button size="sm" variant="outline" onClick={() => handleEditPayment(payment)}>
+                              <Edit className="w-4 h-4 mr-1" />
+                              Modifier
                             </Button>
-                            <Button size="sm" variant="outline">
-                              Détails
+                            <Button size="sm" variant="outline" onClick={() => handleDeletePayment(payment)}>
+                              <Trash2 className="w-4 h-4 mr-1" />
+                              Supprimer
                             </Button>
                           </div>
                         </div>
@@ -228,6 +283,22 @@ const Payments = () => {
             </div>
           </div>
         </main>
+
+        {/* Modals */}
+        <PaymentForm
+          open={showPaymentForm}
+          onOpenChange={setShowPaymentForm}
+          payment={editingPayment}
+          onSubmit={handleSubmitPayment}
+        />
+
+        <DeleteConfirmModal
+          open={showDeleteModal}
+          onOpenChange={setShowDeleteModal}
+          title="Supprimer le paiement"
+          description={`Êtes-vous sûr de vouloir supprimer ce paiement ? Cette action est irréversible.`}
+          onConfirm={confirmDeletePayment}
+        />
       </div>
     </SidebarProvider>
   );

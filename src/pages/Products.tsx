@@ -1,4 +1,5 @@
 
+import { useState } from "react";
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/layout/AppSidebar";
 import { Button } from "@/components/ui/button";
@@ -11,15 +12,68 @@ import {
   Euro, 
   Tag,
   Archive,
-  TrendingUp
+  TrendingUp,
+  Edit,
+  Trash2
 } from "lucide-react";
 import { mockProducts } from "@/data/mockData";
+import { ProductForm } from "@/components/forms/ProductForm";
+import { DeleteConfirmModal } from "@/components/modals/DeleteConfirmModal";
+import { Product } from "@/types";
+import { toast } from "sonner";
 
 const Products = () => {
-  const totalProducts = mockProducts.length;
-  const services = mockProducts.filter(p => p.isService).length;
-  const physicalProducts = mockProducts.filter(p => !p.isService).length;
-  const averagePrice = mockProducts.reduce((acc, p) => acc + p.price, 0) / totalProducts;
+  const [products, setProducts] = useState(mockProducts);
+  const [showProductForm, setShowProductForm] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
+  const [editingProduct, setEditingProduct] = useState<Product | null>(null);
+
+  const totalProducts = products.length;
+  const services = products.filter(p => p.isService).length;
+  const physicalProducts = products.filter(p => !p.isService).length;
+  const averagePrice = products.reduce((acc, p) => acc + p.price, 0) / totalProducts;
+
+  const handleCreateProduct = () => {
+    setEditingProduct(null);
+    setShowProductForm(true);
+  };
+
+  const handleEditProduct = (product: Product) => {
+    setEditingProduct(product);
+    setShowProductForm(true);
+  };
+
+  const handleDeleteProduct = (product: Product) => {
+    setSelectedProduct(product);
+    setShowDeleteModal(true);
+  };
+
+  const handleSubmitProduct = (productData: Partial<Product>) => {
+    if (editingProduct) {
+      setProducts(prev => prev.map(product => 
+        product.id === editingProduct.id 
+          ? { ...product, ...productData }
+          : product
+      ));
+      toast.success("Produit/service modifié avec succès");
+    } else {
+      const newProduct: Product = {
+        id: Date.now().toString(),
+        createdAt: new Date(),
+        ...productData as Product
+      };
+      setProducts(prev => [...prev, newProduct]);
+      toast.success("Produit/service créé avec succès");
+    }
+  };
+
+  const confirmDeleteProduct = () => {
+    if (selectedProduct) {
+      setProducts(prev => prev.filter(product => product.id !== selectedProduct.id));
+      toast.success("Produit/service supprimé avec succès");
+    }
+  };
 
   return (
     <SidebarProvider>
@@ -39,7 +93,7 @@ const Products = () => {
                   <p className="text-gray-600">Gérez votre catalogue de produits et services</p>
                 </div>
               </div>
-              <Button className="bg-primary-600 hover:bg-primary-700 text-white">
+              <Button onClick={handleCreateProduct} className="bg-primary-600 hover:bg-primary-700 text-white">
                 <Plus className="w-4 h-4 mr-2" />
                 Nouveau Produit
               </Button>
@@ -125,14 +179,24 @@ const Products = () => {
 
             {/* Products Grid */}
             <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
-              {mockProducts.map((product) => (
+              {products.map((product) => (
                 <Card key={product.id} className="hover:shadow-md transition-shadow">
                   <CardHeader>
                     <CardTitle className="text-lg font-semibold text-gray-900 flex items-center justify-between">
                       {product.name}
-                      <Badge variant={product.isService ? "secondary" : "default"}>
-                        {product.isService ? "Service" : "Produit"}
-                      </Badge>
+                      <div className="flex items-center space-x-2">
+                        <Badge variant={product.isService ? "secondary" : "default"}>
+                          {product.isService ? "Service" : "Produit"}
+                        </Badge>
+                        <div className="flex space-x-1">
+                          <Button size="sm" variant="ghost" onClick={() => handleEditProduct(product)}>
+                            <Edit className="w-4 h-4" />
+                          </Button>
+                          <Button size="sm" variant="ghost" onClick={() => handleDeleteProduct(product)}>
+                            <Trash2 className="w-4 h-4" />
+                          </Button>
+                        </div>
+                      </div>
                     </CardTitle>
                   </CardHeader>
                   <CardContent>
@@ -164,9 +228,6 @@ const Products = () => {
                       </div>
                       
                       <div className="flex space-x-2 pt-2">
-                        <Button size="sm" variant="outline" className="flex-1">
-                          Modifier
-                        </Button>
                         <Button size="sm" className="flex-1">
                           Ajouter à Facture
                         </Button>
@@ -178,6 +239,22 @@ const Products = () => {
             </div>
           </div>
         </main>
+
+        {/* Modals */}
+        <ProductForm
+          open={showProductForm}
+          onOpenChange={setShowProductForm}
+          product={editingProduct}
+          onSubmit={handleSubmitProduct}
+        />
+
+        <DeleteConfirmModal
+          open={showDeleteModal}
+          onOpenChange={setShowDeleteModal}
+          title="Supprimer le produit/service"
+          description={`Êtes-vous sûr de vouloir supprimer ${selectedProduct?.name} ? Cette action est irréversible.`}
+          onConfirm={confirmDeleteProduct}
+        />
       </div>
     </SidebarProvider>
   );
