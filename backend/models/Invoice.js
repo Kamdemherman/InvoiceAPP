@@ -7,6 +7,11 @@ const invoiceItemSchema = new mongoose.Schema({
     ref: 'Product',
     required: true
   },
+  productName: {
+    type: String,
+    required: true,
+    trim: true
+  },
   quantity: {
     type: Number,
     required: true,
@@ -28,7 +33,8 @@ const invoiceSchema = new mongoose.Schema({
   number: {
     type: String,
     required: true,
-    unique: true
+    unique: true,
+    trim: true
   },
   client: {
     type: mongoose.Schema.Types.ObjectId,
@@ -37,7 +43,8 @@ const invoiceSchema = new mongoose.Schema({
   },
   clientName: {
     type: String,
-    required: true
+    required: true,
+    trim: true
   },
   date: {
     type: Date,
@@ -58,12 +65,7 @@ const invoiceSchema = new mongoose.Schema({
     type: Number,
     required: true,
     min: 0,
-    default: 0.20
-  },
-  taxAmount: {
-    type: Number,
-    required: true,
-    min: 0
+    default: 0
   },
   total: {
     type: Number,
@@ -73,18 +75,31 @@ const invoiceSchema = new mongoose.Schema({
   status: {
     type: String,
     required: true,
-    enum: ['draft', 'sent', 'paid', 'overdue', 'cancelled'],
+    enum: ['draft', 'sent', 'paid', 'overdue'],
     default: 'draft'
+  },
+  paymentDate: {
+    type: Date
+  },
+  notes: {
+    type: String,
+    trim: true
   }
 }, {
   timestamps: true
 });
 
-// Generate invoice number automatically
+// Middleware pour générer automatiquement le numéro de facture
 invoiceSchema.pre('save', async function(next) {
   if (!this.number) {
-    const count = await mongoose.model('Invoice').countDocuments();
-    this.number = `INV-${(count + 1).toString().padStart(4, '0')}`;
+    const year = new Date().getFullYear();
+    const count = await this.constructor.countDocuments({
+      createdAt: {
+        $gte: new Date(year, 0, 1),
+        $lt: new Date(year + 1, 0, 1)
+      }
+    });
+    this.number = `FAC-${year}-${String(count + 1).padStart(3, '0')}`;
   }
   next();
 });

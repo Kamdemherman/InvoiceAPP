@@ -1,5 +1,4 @@
 
-import { useState } from "react";
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/layout/AppSidebar";
 import { Button } from "@/components/ui/button";
@@ -14,16 +13,22 @@ import {
   Archive,
   TrendingUp,
   Edit,
-  Trash2
+  Trash2,
+  Loader2,
+  AlertTriangle
 } from "lucide-react";
-import { mockProducts } from "@/data/mockData";
 import { ProductForm } from "@/components/forms/ProductForm";
 import { DeleteConfirmModal } from "@/components/modals/DeleteConfirmModal";
 import { Product } from "@/types";
-import { toast } from "sonner";
+import { useProducts, useCreateProduct, useUpdateProduct, useDeleteProduct } from "@/hooks/useProducts";
+import { useState } from "react";
 
 const Products = () => {
-  const [products, setProducts] = useState(mockProducts);
+  const { data: products = [], isLoading, error } = useProducts();
+  const createProductMutation = useCreateProduct();
+  const updateProductMutation = useUpdateProduct();
+  const deleteProductMutation = useDeleteProduct();
+
   const [showProductForm, setShowProductForm] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
@@ -32,7 +37,7 @@ const Products = () => {
   const totalProducts = products.length;
   const services = products.filter(p => p.isService).length;
   const physicalProducts = products.filter(p => !p.isService).length;
-  const averagePrice = products.reduce((acc, p) => acc + p.price, 0) / totalProducts;
+  const averagePrice = totalProducts > 0 ? products.reduce((acc, p) => acc + p.price, 0) / totalProducts : 0;
 
   const handleCreateProduct = () => {
     setEditingProduct(null);
@@ -51,29 +56,57 @@ const Products = () => {
 
   const handleSubmitProduct = (productData: Partial<Product>) => {
     if (editingProduct) {
-      setProducts(prev => prev.map(product => 
-        product.id === editingProduct.id 
-          ? { ...product, ...productData }
-          : product
-      ));
-      toast.success("Produit/service modifié avec succès");
+      updateProductMutation.mutate({ id: editingProduct._id, data: productData });
     } else {
-      const newProduct: Product = {
-        id: Date.now().toString(),
-        createdAt: new Date(),
-        ...productData as Product
-      };
-      setProducts(prev => [...prev, newProduct]);
-      toast.success("Produit/service créé avec succès");
+      createProductMutation.mutate(productData);
     }
+    setShowProductForm(false);
   };
 
   const confirmDeleteProduct = () => {
     if (selectedProduct) {
-      setProducts(prev => prev.filter(product => product.id !== selectedProduct.id));
-      toast.success("Produit/service supprimé avec succès");
+      deleteProductMutation.mutate(selectedProduct._id);
+      setShowDeleteModal(false);
+      setSelectedProduct(null);
     }
   };
+
+  if (isLoading) {
+    return (
+      <SidebarProvider>
+        <div className="min-h-screen flex w-full bg-gray-50">
+          <AppSidebar />
+          <main className="flex-1 p-6">
+            <div className="max-w-7xl mx-auto">
+              <div className="flex items-center justify-center h-64">
+                <Loader2 className="w-8 h-8 animate-spin text-primary-600" />
+              </div>
+            </div>
+          </main>
+        </div>
+      </SidebarProvider>
+    );
+  }
+
+  if (error) {
+    return (
+      <SidebarProvider>
+        <div className="min-h-screen flex w-full bg-gray-50">
+          <AppSidebar />
+          <main className="flex-1 p-6">
+            <div className="max-w-7xl mx-auto">
+              <div className="flex items-center justify-center h-64">
+                <div className="text-center">
+                  <AlertTriangle className="w-12 h-12 text-red-500 mx-auto mb-4" />
+                  <p className="text-red-600">Erreur de connexion au serveur</p>
+                </div>
+              </div>
+            </div>
+          </main>
+        </div>
+      </SidebarProvider>
+    );
+  }
 
   return (
     <SidebarProvider>
@@ -180,7 +213,7 @@ const Products = () => {
             {/* Products Grid */}
             <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
               {products.map((product) => (
-                <Card key={product.id} className="hover:shadow-md transition-shadow">
+                <Card key={product._id} className="hover:shadow-md transition-shadow">
                   <CardHeader>
                     <CardTitle className="text-lg font-semibold text-gray-900 flex items-center justify-between">
                       {product.name}
@@ -223,7 +256,7 @@ const Products = () => {
                           </span>
                         </div>
                         <div className="text-xs text-gray-500">
-                          Créé le {product.createdAt.toLocaleDateString('fr-FR')}
+                          Créé le {new Date(product.createdAt).toLocaleDateString('fr-FR')}
                         </div>
                       </div>
                       

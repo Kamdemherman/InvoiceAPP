@@ -1,5 +1,4 @@
 
-import { useState } from "react";
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/layout/AppSidebar";
 import { Button } from "@/components/ui/button";
@@ -16,16 +15,21 @@ import {
   AlertTriangle,
   Edit,
   Trash2,
-  FileText
+  FileText,
+  Loader2
 } from "lucide-react";
-import { mockClients } from "@/data/mockData";
 import { ClientForm } from "@/components/forms/ClientForm";
 import { DeleteConfirmModal } from "@/components/modals/DeleteConfirmModal";
 import { Client } from "@/types";
-import { toast } from "sonner";
+import { useClients, useCreateClient, useUpdateClient, useDeleteClient } from "@/hooks/useClients";
+import { useState } from "react";
 
 const Clients = () => {
-  const [clients, setClients] = useState(mockClients);
+  const { data: clients = [], isLoading, error } = useClients();
+  const createClientMutation = useCreateClient();
+  const updateClientMutation = useUpdateClient();
+  const deleteClientMutation = useDeleteClient();
+
   const [showClientForm, setShowClientForm] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [selectedClient, setSelectedClient] = useState<Client | null>(null);
@@ -48,32 +52,57 @@ const Clients = () => {
 
   const handleSubmitClient = (clientData: Partial<Client>) => {
     if (editingClient) {
-      setClients(prev => prev.map(client => 
-        client.id === editingClient.id 
-          ? { ...client, ...clientData }
-          : client
-      ));
-      toast.success("Client modifié avec succès");
+      updateClientMutation.mutate({ id: editingClient._id, data: clientData });
     } else {
-      const newClient: Client = {
-        id: Date.now().toString(),
-        createdAt: new Date(),
-        totalInvoices: 0,
-        totalAmount: 0,
-        pendingAmount: 0,
-        ...clientData as Client
-      };
-      setClients(prev => [...prev, newClient]);
-      toast.success("Client créé avec succès");
+      createClientMutation.mutate(clientData);
     }
+    setShowClientForm(false);
   };
 
   const confirmDeleteClient = () => {
     if (selectedClient) {
-      setClients(prev => prev.filter(client => client.id !== selectedClient.id));
-      toast.success("Client supprimé avec succès");
+      deleteClientMutation.mutate(selectedClient._id);
+      setShowDeleteModal(false);
+      setSelectedClient(null);
     }
   };
+
+  if (isLoading) {
+    return (
+      <SidebarProvider>
+        <div className="min-h-screen flex w-full bg-gray-50">
+          <AppSidebar />
+          <main className="flex-1 p-6">
+            <div className="max-w-7xl mx-auto">
+              <div className="flex items-center justify-center h-64">
+                <Loader2 className="w-8 h-8 animate-spin text-primary-600" />
+              </div>
+            </div>
+          </main>
+        </div>
+      </SidebarProvider>
+    );
+  }
+
+  if (error) {
+    return (
+      <SidebarProvider>
+        <div className="min-h-screen flex w-full bg-gray-50">
+          <AppSidebar />
+          <main className="flex-1 p-6">
+            <div className="max-w-7xl mx-auto">
+              <div className="flex items-center justify-center h-64">
+                <div className="text-center">
+                  <AlertTriangle className="w-12 h-12 text-red-500 mx-auto mb-4" />
+                  <p className="text-red-600">Erreur de connexion au serveur</p>
+                </div>
+              </div>
+            </div>
+          </main>
+        </div>
+      </SidebarProvider>
+    );
+  }
 
   return (
     <SidebarProvider>
@@ -109,7 +138,7 @@ const Clients = () => {
                     </div>
                     <div className="ml-4">
                       <p className="text-sm font-medium text-gray-600">Total Clients</p>
-                      <p className="text-2xl font-bold text-gray-900">{mockClients.length}</p>
+                      <p className="text-2xl font-bold text-gray-900">{clients.length}</p>
                     </div>
                   </div>
                 </CardContent>
@@ -124,7 +153,7 @@ const Clients = () => {
                     <div className="ml-4">
                       <p className="text-sm font-medium text-gray-600">CA Total</p>
                       <p className="text-2xl font-bold text-gray-900">
-                        {mockClients.reduce((acc, client) => acc + client.totalAmount, 0).toLocaleString('fr-FR')} €
+                        {clients.reduce((acc, client) => acc + (client.totalAmount || 0), 0).toLocaleString('fr-FR')} €
                       </p>
                     </div>
                   </div>
@@ -140,7 +169,7 @@ const Clients = () => {
                     <div className="ml-4">
                       <p className="text-sm font-medium text-gray-600">Impayés</p>
                       <p className="text-2xl font-bold text-gray-900">
-                        {mockClients.reduce((acc, client) => acc + client.pendingAmount, 0).toLocaleString('fr-FR')} €
+                        {clients.reduce((acc, client) => acc + (client.pendingAmount || 0), 0).toLocaleString('fr-FR')} €
                       </p>
                     </div>
                   </div>
@@ -156,7 +185,7 @@ const Clients = () => {
                     <div className="ml-4">
                       <p className="text-sm font-medium text-gray-600">Clients Actifs</p>
                       <p className="text-2xl font-bold text-gray-900">
-                        {mockClients.filter(client => client.totalAmount > 0).length}
+                        {clients.filter(client => (client.totalAmount || 0) > 0).length}
                       </p>
                     </div>
                   </div>
@@ -184,12 +213,12 @@ const Clients = () => {
             {/* Clients List */}
             <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
               {clients.map((client) => (
-                <Card key={client.id} className="hover:shadow-md transition-shadow">
+                <Card key={client._id} className="hover:shadow-md transition-shadow">
                   <CardHeader>
                     <CardTitle className="text-lg font-semibold text-gray-900 flex items-center justify-between">
                       {client.name}
                       <div className="flex items-center space-x-2">
-                        {client.pendingAmount > 0 && (
+                        {(client.pendingAmount || 0) > 0 && (
                           <Badge variant="destructive">Impayé</Badge>
                         )}
                         <div className="flex space-x-1">
@@ -222,11 +251,11 @@ const Clients = () => {
                         <div className="grid grid-cols-2 gap-4 text-sm">
                           <div>
                             <p className="text-gray-500">Factures</p>
-                            <p className="font-semibold">{client.totalInvoices}</p>
+                            <p className="font-semibold">{client.totalInvoices || 0}</p>
                           </div>
                           <div>
                             <p className="text-gray-500">CA Total</p>
-                            <p className="font-semibold">{client.totalAmount.toLocaleString('fr-FR')} €</p>
+                            <p className="font-semibold">{(client.totalAmount || 0).toLocaleString('fr-FR')} €</p>
                           </div>
                         </div>
                       </div>

@@ -1,6 +1,6 @@
 
 export interface Client {
-  id: string;
+  _id: string;
   name: string;
   email: string;
   phone: string;
@@ -11,13 +11,14 @@ export interface Client {
     country: string;
   };
   createdAt: Date;
-  totalInvoices: number;
-  totalAmount: number;
-  pendingAmount: number;
+  updatedAt: Date;
+  totalInvoices?: number;
+  totalAmount?: number;
+  pendingAmount?: number;
 }
 
 export interface Product {
-  id: string;
+  _id: string;
   name: string;
   description: string;
   price: number;
@@ -25,10 +26,11 @@ export interface Product {
   stock?: number;
   isService: boolean;
   createdAt: Date;
+  updatedAt: Date;
 }
 
 export interface InvoiceItem {
-  productId: string;
+  product: string;
   productName: string;
   quantity: number;
   unitPrice: number;
@@ -36,9 +38,9 @@ export interface InvoiceItem {
 }
 
 export interface Invoice {
-  id: string;
+  _id: string;
   number: string;
-  clientId: string;
+  client: string;
   clientName: string;
   date: Date;
   dueDate: Date;
@@ -49,15 +51,21 @@ export interface Invoice {
   status: 'draft' | 'sent' | 'paid' | 'overdue';
   paymentDate?: Date;
   notes?: string;
+  createdAt: Date;
+  updatedAt: Date;
 }
 
 export interface Payment {
-  id: string;
+  _id: string;
+  invoice: string;
   invoiceId: string;
   amount: number;
   date: Date;
   method: 'cash' | 'card' | 'transfer' | 'check';
   reference?: string;
+  status: 'pending' | 'completed' | 'failed';
+  createdAt: Date;
+  updatedAt: Date;
 }
 
 export interface DashboardStats {
