@@ -19,17 +19,17 @@ interface InvoiceFormProps {
 
 export const InvoiceForm = ({ open, onOpenChange, invoice, onSubmit }: InvoiceFormProps) => {
   const [formData, setFormData] = useState({
-    clientId: invoice?.clientId || '',
+    client: invoice?.client || '',
     date: invoice?.date?.toISOString().split('T')[0] || new Date().toISOString().split('T')[0],
     dueDate: invoice?.dueDate?.toISOString().split('T')[0] || '',
-    items: invoice?.items || [{ productId: '', productName: '', quantity: 1, unitPrice: 0, total: 0 }] as InvoiceItem[],
+    items: invoice?.items || [{ product: '', productName: '', quantity: 1, unitPrice: 0, total: 0 }] as InvoiceItem[],
     notes: invoice?.notes || ''
   });
 
   const addItem = () => {
     setFormData(prev => ({
       ...prev,
-      items: [...prev.items, { productId: '', productName: '', quantity: 1, unitPrice: 0, total: 0 }]
+      items: [...prev.items, { product: '', productName: '', quantity: 1, unitPrice: 0, total: 0 }]
     }));
   };
 
@@ -46,8 +46,8 @@ export const InvoiceForm = ({ open, onOpenChange, invoice, onSubmit }: InvoiceFo
       items: prev.items.map((item, i) => {
         if (i === index) {
           const updatedItem = { ...item, [field]: value };
-          if (field === 'productId') {
-            const product = mockProducts.find(p => p.id === value);
+          if (field === 'product') {
+            const product = mockProducts.find(p => p._id === value);
             if (product) {
               updatedItem.productName = product.name;
               updatedItem.unitPrice = product.price;
@@ -69,7 +69,7 @@ export const InvoiceForm = ({ open, onOpenChange, invoice, onSubmit }: InvoiceFo
     const tax = subtotal * 0.2; // 20% TVA
     const total = subtotal + tax;
     
-    const client = mockClients.find(c => c.id === formData.clientId);
+    const client = mockClients.find(c => c._id === formData.client);
     
     onSubmit({
       ...formData,
@@ -97,13 +97,13 @@ export const InvoiceForm = ({ open, onOpenChange, invoice, onSubmit }: InvoiceFo
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <Label htmlFor="client">Client</Label>
-              <Select value={formData.clientId} onValueChange={(value) => setFormData(prev => ({ ...prev, clientId: value }))}>
+              <Select value={formData.client} onValueChange={(value) => setFormData(prev => ({ ...prev, client: value }))}>
                 <SelectTrigger>
                   <SelectValue placeholder="Sélectionner un client" />
                 </SelectTrigger>
                 <SelectContent>
                   {mockClients.map(client => (
-                    <SelectItem key={client.id} value={client.id}>
+                    <SelectItem key={client._id} value={client._id}>
                       {client.name}
                     </SelectItem>
                   ))}
@@ -149,15 +149,15 @@ export const InvoiceForm = ({ open, onOpenChange, invoice, onSubmit }: InvoiceFo
                     <div>
                       <Label>Produit/Service</Label>
                       <Select 
-                        value={item.productId} 
-                        onValueChange={(value) => updateItem(index, 'productId', value)}
+                        value={item.product} 
+                        onValueChange={(value) => updateItem(index, 'product', value)}
                       >
                         <SelectTrigger>
                           <SelectValue placeholder="Sélectionner" />
                         </SelectTrigger>
                         <SelectContent>
                           {mockProducts.map(product => (
-                            <SelectItem key={product.id} value={product.id}>
+                            <SelectItem key={product._id} value={product._id}>
                               {product.name}
                             </SelectItem>
                           ))}

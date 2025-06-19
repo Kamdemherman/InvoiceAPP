@@ -17,7 +17,7 @@ interface ViewInvoiceModalProps {
 export const ViewInvoiceModal = ({ open, onOpenChange, invoice }: ViewInvoiceModalProps) => {
   if (!invoice) return null;
 
-  const client = mockClients.find(c => c.id === invoice.clientId);
+  const client = mockClients.find(c => c._id === invoice.client);
 
   const getStatusBadge = (status: string) => {
     switch (status) {
