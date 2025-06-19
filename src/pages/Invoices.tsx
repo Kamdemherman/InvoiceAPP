@@ -61,15 +61,17 @@ const Invoices = () => {
   const handleSubmitInvoice = (invoiceData: Partial<Invoice>) => {
     if (editingInvoice) {
       setInvoices(prev => prev.map(inv => 
-        inv.id === editingInvoice.id 
+        inv._id === editingInvoice._id 
           ? { ...inv, ...invoiceData }
           : inv
       ));
       toast.success("Facture modifiée avec succès");
     } else {
       const newInvoice: Invoice = {
-        id: Date.now().toString(),
+        _id: Date.now().toString(),
         number: `FAC-2024-${String(invoices.length + 1).padStart(3, '0')}`,
+        createdAt: new Date(),
+        updatedAt: new Date(),
         ...invoiceData as Invoice
       };
       setInvoices(prev => [...prev, newInvoice]);
@@ -79,7 +81,7 @@ const Invoices = () => {
 
   const confirmDeleteInvoice = () => {
     if (selectedInvoice) {
-      setInvoices(prev => prev.filter(inv => inv.id !== selectedInvoice.id));
+      setInvoices(prev => prev.filter(inv => inv._id !== selectedInvoice._id));
       toast.success("Facture supprimée avec succès");
     }
   };
@@ -205,7 +207,7 @@ const Invoices = () => {
             {/* Invoices List */}
             <div className="space-y-4">
               {invoices.map((invoice) => (
-                <Card key={invoice.id} className="hover:shadow-md transition-shadow">
+                <Card key={invoice._id} className="hover:shadow-md transition-shadow">
                   <CardContent className="p-6">
                     <div className="flex items-center justify-between">
                       <div className="flex-1">

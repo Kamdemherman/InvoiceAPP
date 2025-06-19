@@ -37,7 +37,7 @@ export function RecentInvoices({ invoices }: RecentInvoicesProps) {
         <div className="space-y-4">
           {invoices.map((invoice) => (
             <div
-              key={invoice.id}
+              key={invoice._id}
               className="flex items-center justify-between p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors duration-200"
             >
               <div className="flex-1">

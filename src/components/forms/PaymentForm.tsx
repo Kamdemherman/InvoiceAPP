@@ -11,7 +11,7 @@ import { mockInvoices } from "@/data/mockData";
 interface PaymentFormProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  payment?: Payment;
+  payment?: Payment | null;
   onSubmit: (payment: Partial<Payment>) => void;
 }
 
@@ -21,13 +21,15 @@ export const PaymentForm = ({ open, onOpenChange, payment, onSubmit }: PaymentFo
     amount: payment?.amount || 0,
     date: payment?.date?.toISOString().split('T')[0] || new Date().toISOString().split('T')[0],
     method: payment?.method || 'card' as const,
-    reference: payment?.reference || ''
+    reference: payment?.reference || '',
+    status: payment?.status || 'completed' as const
   });
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     onSubmit({
       ...formData,
+      invoice: formData.invoiceId,
       date: new Date(formData.date)
     });
     onOpenChange(false);
@@ -51,7 +53,7 @@ export const PaymentForm = ({ open, onOpenChange, payment, onSubmit }: PaymentFo
               </SelectTrigger>
               <SelectContent>
                 {mockInvoices.map(invoice => (
-                  <SelectItem key={invoice.id} value={invoice.id}>
+                  <SelectItem key={invoice._id} value={invoice._id}>
                     {invoice.number} - {invoice.clientName} ({invoice.total.toFixed(2)} €)
                   </SelectItem>
                 ))}

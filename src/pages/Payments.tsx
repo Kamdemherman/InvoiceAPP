@@ -53,14 +53,16 @@ const Payments = () => {
   const handleSubmitPayment = (paymentData: Partial<Payment>) => {
     if (editingPayment) {
       setPayments(prev => prev.map(payment => 
-        payment.id === editingPayment.id 
+        payment._id === editingPayment._id 
           ? { ...payment, ...paymentData }
           : payment
       ));
       toast.success("Paiement modifié avec succès");
     } else {
       const newPayment: Payment = {
-        id: Date.now().toString(),
+        _id: Date.now().toString(),
+        createdAt: new Date(),
+        updatedAt: new Date(),
         ...paymentData as Payment
       };
       setPayments(prev => [...prev, newPayment]);
@@ -70,7 +72,7 @@ const Payments = () => {
 
   const confirmDeletePayment = () => {
     if (selectedPayment) {
-      setPayments(prev => prev.filter(payment => payment.id !== selectedPayment.id));
+      setPayments(prev => prev.filter(payment => payment._id !== selectedPayment._id));
       toast.success("Paiement supprimé avec succès");
     }
   };
@@ -217,9 +219,9 @@ const Payments = () => {
             {/* Payments List */}
             <div className="space-y-4">
               {payments.map((payment) => {
-                const invoice = mockInvoices.find(inv => inv.id === payment.invoiceId);
+                const invoice = mockInvoices.find(inv => inv._id === payment.invoiceId);
                 return (
-                  <Card key={payment.id} className="hover:shadow-md transition-shadow">
+                  <Card key={payment._id} className="hover:shadow-md transition-shadow">
                     <CardContent className="p-6">
                       <div className="flex items-center justify-between">
                         <div className="flex items-center space-x-4">
@@ -229,7 +231,7 @@ const Payments = () => {
                           <div>
                             <div className="flex items-center space-x-2">
                               <h3 className="text-lg font-semibold text-gray-900">
-                                Paiement #{payment.id.slice(0, 8)}
+                                Paiement #{payment._id.slice(0, 8)}
                               </h3>
                               <Badge variant="secondary">
                                 {getPaymentMethodLabel(payment.method)}
