@@ -25,11 +25,10 @@ export const useCreatePayment = () => {
     mutationFn: paymentsAPI.create,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['payments'] });
-      queryClient.invalidateQueries({ queryKey: ['invoices'] });
-      toast.success('Paiement enregistré avec succès');
+      toast.success('Paiement créé avec succès');
     },
     onError: (error: Error) => {
-      toast.error(error.message || 'Erreur lors de l\'enregistrement du paiement');
+      toast.error(error.message || 'Erreur lors de la création du paiement');
     },
   });
 };
@@ -41,7 +40,6 @@ export const useUpdatePayment = () => {
     mutationFn: ({ id, data }: { id: string; data: any }) => paymentsAPI.update(id, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['payments'] });
-      queryClient.invalidateQueries({ queryKey: ['invoices'] });
       toast.success('Paiement modifié avec succès');
     },
     onError: (error: Error) => {
@@ -57,7 +55,6 @@ export const useDeletePayment = () => {
     mutationFn: paymentsAPI.delete,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['payments'] });
-      queryClient.invalidateQueries({ queryKey: ['invoices'] });
       toast.success('Paiement supprimé avec succès');
     },
     onError: (error: Error) => {

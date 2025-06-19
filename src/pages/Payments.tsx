@@ -17,14 +17,19 @@ import {
   Edit,
   Trash2
 } from "lucide-react";
-import { mockPayments, mockInvoices } from "@/data/mockData";
 import { PaymentForm } from "@/components/forms/PaymentForm";
 import { DeleteConfirmModal } from "@/components/modals/DeleteConfirmModal";
 import { Payment } from "@/types";
-import { toast } from "sonner";
+import { usePayments, useCreatePayment, useUpdatePayment, useDeletePayment } from "@/hooks/usePayments";
+import { useInvoices } from "@/hooks/useInvoices";
 
 const Payments = () => {
-  const [payments, setPayments] = useState(mockPayments);
+  const { data: payments = [], isLoading } = usePayments();
+  const { data: invoices = [] } = useInvoices();
+  const createPaymentMutation = useCreatePayment();
+  const updatePaymentMutation = useUpdatePayment();
+  const deletePaymentMutation = useDeletePayment();
+
   const [showPaymentForm, setShowPaymentForm] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [selectedPayment, setSelectedPayment] = useState<Payment | null>(null);
@@ -32,7 +37,7 @@ const Payments = () => {
 
   const totalPayments = payments.reduce((acc, payment) => acc + payment.amount, 0);
   const paymentsThisMonth = payments.filter(payment => 
-    payment.date.getMonth() === new Date().getMonth()
+    new Date(payment.date).getMonth() === new Date().getMonth()
   ).reduce((acc, payment) => acc + payment.amount, 0);
 
   const handleCreatePayment = () => {
@@ -50,30 +55,23 @@ const Payments = () => {
     setShowDeleteModal(true);
   };
 
-  const handleSubmitPayment = (paymentData: Partial<Payment>) => {
+  const handleSubmitPayment = async (paymentData: Partial<Payment>) => {
     if (editingPayment) {
-      setPayments(prev => prev.map(payment => 
-        payment._id === editingPayment._id 
-          ? { ...payment, ...paymentData }
-          : payment
-      ));
-      toast.success("Paiement modifié avec succès");
+      await updatePaymentMutation.mutateAsync({
+        id: editingPayment._id,
+        data: paymentData
+      });
     } else {
-      const newPayment: Payment = {
-        _id: Date.now().toString(),
-        createdAt: new Date(),
-        updatedAt: new Date(),
-        ...paymentData as Payment
-      };
-      setPayments(prev => [...prev, newPayment]);
-      toast.success("Paiement enregistré avec succès");
+      await createPaymentMutation.mutateAsync(paymentData);
     }
+    setShowPaymentForm(false);
   };
 
-  const confirmDeletePayment = () => {
+  const confirmDeletePayment = async () => {
     if (selectedPayment) {
-      setPayments(prev => prev.filter(payment => payment._id !== selectedPayment._id));
-      toast.success("Paiement supprimé avec succès");
+      await deletePaymentMutation.mutateAsync(selectedPayment._id);
+      setShowDeleteModal(false);
+      setSelectedPayment(null);
     }
   };
 
@@ -106,6 +104,23 @@ const Payments = () => {
         return method;
     }
   };
+
+  if (isLoading) {
+    return (
+      <SidebarProvider>
+        <div className="min-h-screen flex w-full bg-gray-50">
+          <AppSidebar />
+          <main className="flex-1 p-6">
+            <div className="max-w-7xl mx-auto">
+              <div className="text-center py-20">
+                <div className="text-lg">Chargement des paiements...</div>
+              </div>
+            </div>
+          </main>
+        </div>
+      </SidebarProvider>
+    );
+  }
 
   return (
     <SidebarProvider>
@@ -173,7 +188,7 @@ const Payments = () => {
                     </div>
                     <div className="ml-4">
                       <p className="text-sm font-medium text-gray-600">Nb Paiements</p>
-                      <p className="text-2xl font-bold text-gray-900">{mockPayments.length}</p>
+                      <p className="text-2xl font-bold text-gray-900">{payments.length}</p>
                     </div>
                   </div>
                 </CardContent>
@@ -188,7 +203,7 @@ const Payments = () => {
                     <div className="ml-4">
                       <p className="text-sm font-medium text-gray-600">Paiement Moyen</p>
                       <p className="text-2xl font-bold text-gray-900">
-                        {(totalPayments / mockPayments.length).toFixed(0)} €
+                        {payments.length > 0 ? (totalPayments / payments.length).toFixed(0) : 0} €
                       </p>
                     </div>
                   </div>
@@ -219,7 +234,7 @@ const Payments = () => {
             {/* Payments List */}
             <div className="space-y-4">
               {payments.map((payment) => {
-                const invoice = mockInvoices.find(inv => inv._id === payment.invoiceId);
+                const invoice = invoices.find(inv => inv._id === payment.invoiceId);
                 return (
                   <Card key={payment._id} className="hover:shadow-md transition-shadow">
                     <CardContent className="p-6">
@@ -244,7 +259,7 @@ const Payments = () => {
                               </div>
                               <div className="flex items-center">
                                 <Calendar className="w-4 h-4 mr-1" />
-                                {payment.date.toLocaleDateString('fr-FR')}
+                                {new Date(payment.date).toLocaleDateString('fr-FR')}
                               </div>
                               {payment.reference && (
                                 <div className="text-xs bg-gray-100 px-2 py-1 rounded">

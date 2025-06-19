@@ -18,15 +18,18 @@ import {
   Edit,
   Trash2
 } from "lucide-react";
-import { mockInvoices } from "@/data/mockData";
 import { InvoiceForm } from "@/components/forms/InvoiceForm";
 import { ViewInvoiceModal } from "@/components/modals/ViewInvoiceModal";
 import { DeleteConfirmModal } from "@/components/modals/DeleteConfirmModal";
 import { Invoice } from "@/types";
-import { toast } from "sonner";
+import { useInvoices, useCreateInvoice, useUpdateInvoice, useDeleteInvoice } from "@/hooks/useInvoices";
 
 const Invoices = () => {
-  const [invoices, setInvoices] = useState(mockInvoices);
+  const { data: invoices = [], isLoading } = useInvoices();
+  const createInvoiceMutation = useCreateInvoice();
+  const updateInvoiceMutation = useUpdateInvoice();
+  const deleteInvoiceMutation = useDeleteInvoice();
+
   const [showInvoiceForm, setShowInvoiceForm] = useState(false);
   const [showViewModal, setShowViewModal] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
@@ -58,31 +61,23 @@ const Invoices = () => {
     setShowDeleteModal(true);
   };
 
-  const handleSubmitInvoice = (invoiceData: Partial<Invoice>) => {
+  const handleSubmitInvoice = async (invoiceData: Partial<Invoice>) => {
     if (editingInvoice) {
-      setInvoices(prev => prev.map(inv => 
-        inv._id === editingInvoice._id 
-          ? { ...inv, ...invoiceData }
-          : inv
-      ));
-      toast.success("Facture modifiée avec succès");
+      await updateInvoiceMutation.mutateAsync({
+        id: editingInvoice._id,
+        data: invoiceData
+      });
     } else {
-      const newInvoice: Invoice = {
-        _id: Date.now().toString(),
-        number: `FAC-2024-${String(invoices.length + 1).padStart(3, '0')}`,
-        createdAt: new Date(),
-        updatedAt: new Date(),
-        ...invoiceData as Invoice
-      };
-      setInvoices(prev => [...prev, newInvoice]);
-      toast.success("Facture créée avec succès");
+      await createInvoiceMutation.mutateAsync(invoiceData);
     }
+    setShowInvoiceForm(false);
   };
 
-  const confirmDeleteInvoice = () => {
+  const confirmDeleteInvoice = async () => {
     if (selectedInvoice) {
-      setInvoices(prev => prev.filter(inv => inv._id !== selectedInvoice._id));
-      toast.success("Facture supprimée avec succès");
+      await deleteInvoiceMutation.mutateAsync(selectedInvoice._id);
+      setShowDeleteModal(false);
+      setSelectedInvoice(null);
     }
   };
 
@@ -100,6 +95,23 @@ const Invoices = () => {
         return <Badge variant="secondary">{status}</Badge>;
     }
   };
+
+  if (isLoading) {
+    return (
+      <SidebarProvider>
+        <div className="min-h-screen flex w-full bg-gray-50">
+          <AppSidebar />
+          <main className="flex-1 p-6">
+            <div className="max-w-7xl mx-auto">
+              <div className="text-center py-20">
+                <div className="text-lg">Chargement des factures...</div>
+              </div>
+            </div>
+          </main>
+        </div>
+      </SidebarProvider>
+    );
+  }
 
   return (
     <SidebarProvider>
@@ -223,11 +235,11 @@ const Invoices = () => {
                               </div>
                               <div className="flex items-center">
                                 <Calendar className="w-4 h-4 mr-1" />
-                                {invoice.date.toLocaleDateString('fr-FR')}
+                                {new Date(invoice.date).toLocaleDateString('fr-FR')}
                               </div>
                               <div className="flex items-center">
                                 <Calendar className="w-4 h-4 mr-1" />
-                                Échéance: {invoice.dueDate.toLocaleDateString('fr-FR')}
+                                Échéance: {new Date(invoice.dueDate).toLocaleDateString('fr-FR')}
                               </div>
                             </div>
                           </div>

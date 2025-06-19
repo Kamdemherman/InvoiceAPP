@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Payment } from "@/types";
-import { mockInvoices } from "@/data/mockData";
+import { useInvoices } from "@/hooks/useInvoices";
 
 interface PaymentFormProps {
   open: boolean;
@@ -16,10 +16,12 @@ interface PaymentFormProps {
 }
 
 export const PaymentForm = ({ open, onOpenChange, payment, onSubmit }: PaymentFormProps) => {
+  const { data: invoices = [] } = useInvoices();
+  
   const [formData, setFormData] = useState({
     invoiceId: payment?.invoiceId || '',
     amount: payment?.amount || 0,
-    date: payment?.date?.toISOString().split('T')[0] || new Date().toISOString().split('T')[0],
+    date: payment?.date ? new Date(payment.date).toISOString().split('T')[0] : new Date().toISOString().split('T')[0],
     method: payment?.method || 'card' as const,
     reference: payment?.reference || '',
     status: payment?.status || 'completed' as const
@@ -52,7 +54,7 @@ export const PaymentForm = ({ open, onOpenChange, payment, onSubmit }: PaymentFo
                 <SelectValue placeholder="Sélectionner une facture" />
               </SelectTrigger>
               <SelectContent>
-                {mockInvoices.map(invoice => (
+                {invoices.map(invoice => (
                   <SelectItem key={invoice._id} value={invoice._id}>
                     {invoice.number} - {invoice.clientName} ({invoice.total.toFixed(2)} €)
                   </SelectItem>

@@ -7,8 +7,9 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Card, CardContent } from "@/components/ui/card";
 import { Plus, Trash2 } from "lucide-react";
-import { mockClients, mockProducts } from "@/data/mockData";
 import { Invoice, InvoiceItem } from "@/types";
+import { useClients } from "@/hooks/useClients";
+import { useProducts } from "@/hooks/useProducts";
 
 interface InvoiceFormProps {
   open: boolean;
@@ -18,10 +19,13 @@ interface InvoiceFormProps {
 }
 
 export const InvoiceForm = ({ open, onOpenChange, invoice, onSubmit }: InvoiceFormProps) => {
+  const { data: clients = [] } = useClients();
+  const { data: products = [] } = useProducts();
+
   const [formData, setFormData] = useState({
     client: invoice?.client || '',
-    date: invoice?.date?.toISOString().split('T')[0] || new Date().toISOString().split('T')[0],
-    dueDate: invoice?.dueDate?.toISOString().split('T')[0] || '',
+    date: invoice?.date ? new Date(invoice.date).toISOString().split('T')[0] : new Date().toISOString().split('T')[0],
+    dueDate: invoice?.dueDate ? new Date(invoice.dueDate).toISOString().split('T')[0] : '',
     items: invoice?.items || [{ product: '', productName: '', quantity: 1, unitPrice: 0, total: 0 }] as InvoiceItem[],
     notes: invoice?.notes || ''
   });
@@ -47,7 +51,7 @@ export const InvoiceForm = ({ open, onOpenChange, invoice, onSubmit }: InvoiceFo
         if (i === index) {
           const updatedItem = { ...item, [field]: value };
           if (field === 'product') {
-            const product = mockProducts.find(p => p._id === value);
+            const product = products.find(p => p._id === value);
             if (product) {
               updatedItem.productName = product.name;
               updatedItem.unitPrice = product.price;
@@ -69,7 +73,7 @@ export const InvoiceForm = ({ open, onOpenChange, invoice, onSubmit }: InvoiceFo
     const tax = subtotal * 0.2; // 20% TVA
     const total = subtotal + tax;
     
-    const client = mockClients.find(c => c._id === formData.client);
+    const client = clients.find(c => c._id === formData.client);
     
     onSubmit({
       ...formData,
@@ -102,7 +106,7 @@ export const InvoiceForm = ({ open, onOpenChange, invoice, onSubmit }: InvoiceFo
                   <SelectValue placeholder="Sélectionner un client" />
                 </SelectTrigger>
                 <SelectContent>
-                  {mockClients.map(client => (
+                  {clients.map(client => (
                     <SelectItem key={client._id} value={client._id}>
                       {client.name}
                     </SelectItem>
@@ -156,7 +160,7 @@ export const InvoiceForm = ({ open, onOpenChange, invoice, onSubmit }: InvoiceFo
                           <SelectValue placeholder="Sélectionner" />
                         </SelectTrigger>
                         <SelectContent>
-                          {mockProducts.map(product => (
+                          {products.map(product => (
                             <SelectItem key={product._id} value={product._id}>
                               {product.name}
                             </SelectItem>

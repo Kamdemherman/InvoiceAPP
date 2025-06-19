@@ -11,11 +11,45 @@ import {
   AlertTriangle,
   Calendar
 } from "lucide-react";
-import { mockDashboardStats } from "@/data/mockData";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { useDashboardStats } from "@/hooks/useDashboard";
 
 const Index = () => {
-  const stats = mockDashboardStats;
+  const { data: stats, isLoading } = useDashboardStats();
+
+  if (isLoading) {
+    return (
+      <SidebarProvider>
+        <div className="min-h-screen flex w-full bg-gray-50">
+          <AppSidebar />
+          <main className="flex-1 p-6">
+            <div className="max-w-7xl mx-auto">
+              <div className="text-center py-20">
+                <div className="text-lg">Chargement du dashboard...</div>
+              </div>
+            </div>
+          </main>
+        </div>
+      </SidebarProvider>
+    );
+  }
+
+  if (!stats) {
+    return (
+      <SidebarProvider>
+        <div className="min-h-screen flex w-full bg-gray-50">
+          <AppSidebar />
+          <main className="flex-1 p-6">
+            <div className="max-w-7xl mx-auto">
+              <div className="text-center py-20">
+                <div className="text-lg text-red-600">Erreur lors du chargement des données</div>
+              </div>
+            </div>
+          </main>
+        </div>
+      </SidebarProvider>
+    );
+  }
 
   return (
     <SidebarProvider>
