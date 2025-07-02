@@ -1,13 +1,12 @@
-
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/layout/AppSidebar";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { SearchInput } from "@/components/ui/search-input";
 import { 
   Users, 
   Plus, 
-  Search, 
   Mail, 
   Phone, 
   MapPin,
@@ -16,12 +15,15 @@ import {
   Edit,
   Trash2,
   FileText,
-  Loader2
+  Loader2,
+  Eye
 } from "lucide-react";
 import { ClientForm } from "@/components/forms/ClientForm";
+import { ViewClientModal } from "@/components/modals/ViewClientModal";
 import { DeleteConfirmModal } from "@/components/modals/DeleteConfirmModal";
 import { Client } from "@/types";
 import { useClients, useCreateClient, useUpdateClient, useDeleteClient } from "@/hooks/useClients";
+import { useSearch } from "@/hooks/useSearch";
 import { useState } from "react";
 
 const Clients = () => {
@@ -30,7 +32,20 @@ const Clients = () => {
   const updateClientMutation = useUpdateClient();
   const deleteClientMutation = useDeleteClient();
 
+  // Search functionality
+  const { searchQuery, setSearchQuery, filteredData: filteredClients } = useSearch(
+    clients,
+    [
+      'name',
+      'email',
+      'phone',
+      (client: Client) => `${client.address.city} ${client.address.country}`,
+      (client: Client) => client.address.street
+    ]
+  );
+
   const [showClientForm, setShowClientForm] = useState(false);
+  const [showViewModal, setShowViewModal] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [selectedClient, setSelectedClient] = useState<Client | null>(null);
   const [editingClient, setEditingClient] = useState<Client | null>(null);
@@ -38,6 +53,11 @@ const Clients = () => {
   const handleCreateClient = () => {
     setEditingClient(null);
     setShowClientForm(true);
+  };
+
+  const handleViewClient = (client: Client) => {
+    setSelectedClient(client);
+    setShowViewModal(true);
   };
 
   const handleEditClient = (client: Client) => {
@@ -193,26 +213,25 @@ const Clients = () => {
               </Card>
             </div>
 
-            {/* Search and Filters */}
+            {/* Search */}
             <Card className="mb-6">
               <CardContent className="p-6">
-                <div className="flex items-center space-x-4">
-                  <div className="flex-1 relative">
-                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
-                    <input
-                      type="text"
-                      placeholder="Rechercher un client..."
-                      className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
-                    />
+                <div className="flex items-center justify-between">
+                  <SearchInput
+                    placeholder="Rechercher un client (nom, email, téléphone, adresse)..."
+                    onSearch={setSearchQuery}
+                    className="flex-1 mr-4"
+                  />
+                  <div className="text-sm text-gray-500">
+                    {searchQuery && `${filteredClients.length} résultat(s) trouvé(s)`}
                   </div>
-                  <Button variant="outline">Filtrer</Button>
                 </div>
               </CardContent>
             </Card>
 
             {/* Clients List */}
             <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
-              {clients.map((client) => (
+              {filteredClients.map((client) => (
                 <Card key={client._id} className="hover:shadow-md transition-shadow">
                   <CardHeader>
                     <CardTitle className="text-lg font-semibold text-gray-900 flex items-center justify-between">
@@ -222,6 +241,9 @@ const Clients = () => {
                           <Badge variant="destructive">Impayé</Badge>
                         )}
                         <div className="flex space-x-1">
+                          <Button size="sm" variant="ghost" onClick={() => handleViewClient(client)}>
+                            <Eye className="w-4 h-4" />
+                          </Button>
                           <Button size="sm" variant="ghost" onClick={() => handleEditClient(client)}>
                             <Edit className="w-4 h-4" />
                           </Button>
@@ -271,10 +293,29 @@ const Clients = () => {
                 </Card>
               ))}
             </div>
+
+            {/* No results message */}
+            {searchQuery && filteredClients.length === 0 && (
+              <div className="text-center py-12">
+                <Users className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+                <h3 className="text-lg font-medium text-gray-900 mb-2">Aucun client trouvé</h3>
+                <p className="text-gray-500">Essayez de modifier vos critères de recherche</p>
+              </div>
+            )}
           </div>
         </main>
 
         {/* Modals */}
+        <ViewClientModal
+          open={showViewModal}
+          onOpenChange={setShowViewModal}
+          client={selectedClient}
+          onEdit={(client) => {
+            setShowViewModal(false);
+            handleEditClient(client);
+          }}
+        />
+
         <ClientForm
           open={showClientForm}
           onOpenChange={setShowClientForm}

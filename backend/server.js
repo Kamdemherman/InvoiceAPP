@@ -1,7 +1,7 @@
-
 const express = require('express');
 const mongoose = require('mongoose');
 const cors = require('cors');
+const path = require('path');
 require('dotenv').config();
 
 const app = express();
@@ -11,14 +11,19 @@ app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
+// Servir les fichiers statiques (logos)
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+
 // Routes
 app.use('/api/clients', require('./routes/clients'));
 app.use('/api/products', require('./routes/products'));
 app.use('/api/invoices', require('./routes/invoices'));
 app.use('/api/payments', require('./routes/payments'));
+app.use('/api/settings', require('./routes/settings'));
+app.use('/api', require('./routes/email'));
 
 // MongoDB Connection
-mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/invoice-app')
+mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/factureDb')
   .then(() => {
     console.log('✅ Connected to MongoDB');
   })
@@ -33,9 +38,10 @@ app.get('/', (req, res) => {
     version: '1.0.0',
     endpoints: {
       clients: '/api/clients',
-      products: '/api/products', 
+      products: '/api/products',  
       invoices: '/api/invoices',
-      payments: '/api/payments'
+      payments: '/api/payments',
+      settings: '/api/settings'
     }
   });
 });

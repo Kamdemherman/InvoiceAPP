@@ -22,7 +22,7 @@ export const ClientForm = ({ open, onOpenChange, client, onSubmit }: ClientFormP
       street: client?.address?.street || '',
       city: client?.address?.city || '',
       postalCode: client?.address?.postalCode || '',
-      country: client?.address?.country || 'France'
+      country: client?.address?.country || 'Cameroun'
     }
   });
 

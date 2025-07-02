@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -75,16 +74,28 @@ export const InvoiceForm = ({ open, onOpenChange, invoice, onSubmit }: InvoiceFo
     
     const client = clients.find(c => c._id === formData.client);
     
-    onSubmit({
-      ...formData,
+    const invoiceData: any = {
+      client: formData.client,
       clientName: client?.name || '',
       date: new Date(formData.date),
       dueDate: new Date(formData.dueDate),
+      items: formData.items,
       subtotal,
       tax,
       total,
-      status: invoice?.status || 'draft'
-    });
+      status: invoice?.status || 'draft',
+      notes: formData.notes
+    };
+
+    // Pour les factures existantes, inclure l'ID et le numéro
+    if (invoice?._id) {
+      invoiceData._id = invoice._id;
+      invoiceData.number = invoice.number;
+    }
+    // Pour les nouvelles factures, ne pas inclure le champ number du tout
+    
+    console.log('Submitting invoice data:', invoiceData);
+    onSubmit(invoiceData);
     onOpenChange(false);
   };
 

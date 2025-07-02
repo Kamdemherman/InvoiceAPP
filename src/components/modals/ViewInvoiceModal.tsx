@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -6,7 +5,6 @@ import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { Calendar, User, Euro, Mail, Phone, MapPin } from "lucide-react";
 import { Invoice } from "@/types";
-import { mockClients } from "@/data/mockData";
 
 interface ViewInvoiceModalProps {
   open: boolean;
@@ -17,7 +15,11 @@ interface ViewInvoiceModalProps {
 export const ViewInvoiceModal = ({ open, onOpenChange, invoice }: ViewInvoiceModalProps) => {
   if (!invoice) return null;
 
-  const client = mockClients.find(c => c._id === invoice.client);
+  // Fonction utilitaire pour convertir les dates
+  const formatDate = (dateValue: string | Date) => {
+    const date = typeof dateValue === 'string' ? new Date(dateValue) : dateValue;
+    return date.toLocaleDateString('fr-FR');
+  };
 
   const getStatusBadge = (status: string) => {
     switch (status) {
@@ -54,38 +56,28 @@ export const ViewInvoiceModal = ({ open, onOpenChange, invoice }: ViewInvoiceMod
               <div className="space-y-2">
                 <div className="flex items-center text-sm">
                   <Calendar className="w-4 h-4 mr-2" />
-                  Date: {invoice.date.toLocaleDateString('fr-FR')}
+                  Date: {formatDate(invoice.date)}
                 </div>
                 <div className="flex items-center text-sm">
                   <Calendar className="w-4 h-4 mr-2" />
-                  Échéance: {invoice.dueDate.toLocaleDateString('fr-FR')}
+                  Échéance: {formatDate(invoice.dueDate)}
                 </div>
               </div>
             </div>
             
-            {client && (
-              <div>
-                <h3 className="text-lg font-semibold mb-3">Client</h3>
-                <div className="space-y-2">
-                  <div className="flex items-center text-sm">
-                    <User className="w-4 h-4 mr-2" />
-                    {client.name}
-                  </div>
-                  <div className="flex items-center text-sm">
-                    <Mail className="w-4 h-4 mr-2" />
-                    {client.email}
-                  </div>
-                  <div className="flex items-center text-sm">
-                    <Phone className="w-4 h-4 mr-2" />
-                    {client.phone}
-                  </div>
-                  <div className="flex items-center text-sm">
-                    <MapPin className="w-4 h-4 mr-2" />
-                    {client.address.street}, {client.address.city} {client.address.postalCode}
-                  </div>
+            <div>
+              <h3 className="text-lg font-semibold mb-3">Client</h3>
+              <div className="space-y-2">
+                <div className="flex items-center text-sm">
+                  <User className="w-4 h-4 mr-2" />
+                  {invoice.clientName}
+                </div>
+                <div className="flex items-center text-sm">
+                  <Mail className="w-4 h-4 mr-2" />
+                  Informations client disponibles
                 </div>
               </div>
-            )}
+            </div>
           </div>
 
           <Separator />

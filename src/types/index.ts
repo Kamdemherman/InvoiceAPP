@@ -76,3 +76,4 @@ export interface DashboardStats {
   overdueAmount: number;
   recentInvoices: Invoice[];
 }
+

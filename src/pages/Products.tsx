@@ -1,13 +1,12 @@
-
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/layout/AppSidebar";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { SearchInput } from "@/components/ui/search-input";
 import { 
   Package, 
   Plus, 
-  Search, 
   Euro, 
   Tag,
   Archive,
@@ -15,12 +14,15 @@ import {
   Edit,
   Trash2,
   Loader2,
-  AlertTriangle
+  AlertTriangle,
+  Eye
 } from "lucide-react";
 import { ProductForm } from "@/components/forms/ProductForm";
+import { ViewProductModal } from "@/components/modals/ViewProductModal";
 import { DeleteConfirmModal } from "@/components/modals/DeleteConfirmModal";
 import { Product } from "@/types";
 import { useProducts, useCreateProduct, useUpdateProduct, useDeleteProduct } from "@/hooks/useProducts";
+import { useSearch } from "@/hooks/useSearch";
 import { useState } from "react";
 
 const Products = () => {
@@ -29,19 +31,45 @@ const Products = () => {
   const updateProductMutation = useUpdateProduct();
   const deleteProductMutation = useDeleteProduct();
 
+  // Search functionality
+  const { searchQuery, setSearchQuery, filteredData: filteredProducts } = useSearch(
+    products,
+    [
+      'name',
+      'description',
+      'category',
+      (product: Product) => product.price.toString(),
+      (product: Product) => product.isService ? 'service' : 'produit'
+    ]
+  );
+
   const [showProductForm, setShowProductForm] = useState(false);
+  const [showViewModal, setShowViewModal] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
+  const [categoryFilter, setCategoryFilter] = useState<string>('all');
 
   const totalProducts = products.length;
   const services = products.filter(p => p.isService).length;
   const physicalProducts = products.filter(p => !p.isService).length;
   const averagePrice = totalProducts > 0 ? products.reduce((acc, p) => acc + p.price, 0) / totalProducts : 0;
 
+  // Filter by category
+  const categoryFilteredProducts = categoryFilter === 'all' 
+    ? filteredProducts 
+    : categoryFilter === 'services'
+    ? filteredProducts.filter(p => p.isService)
+    : filteredProducts.filter(p => !p.isService);
+
   const handleCreateProduct = () => {
     setEditingProduct(null);
     setShowProductForm(true);
+  };
+
+  const handleViewProduct = (product: Product) => {
+    setSelectedProduct(product);
+    setShowViewModal(true);
   };
 
   const handleEditProduct = (product: Product) => {
@@ -195,24 +223,41 @@ const Products = () => {
             <Card className="mb-6">
               <CardContent className="p-6">
                 <div className="flex items-center space-x-4">
-                  <div className="flex-1 relative">
-                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
-                    <input
-                      type="text"
-                      placeholder="Rechercher un produit ou service..."
-                      className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
-                    />
-                  </div>
-                  <Button variant="outline">Tous</Button>
-                  <Button variant="outline">Produits</Button>
-                  <Button variant="outline">Services</Button>
+                  <SearchInput
+                    placeholder="Rechercher un produit (nom, description, catégorie, prix)..."
+                    onSearch={setSearchQuery}
+                    className="flex-1"
+                  />
+                  <Button 
+                    variant={categoryFilter === 'all' ? 'default' : 'outline'}
+                    onClick={() => setCategoryFilter('all')}
+                  >
+                    Tous
+                  </Button>
+                  <Button 
+                    variant={categoryFilter === 'products' ? 'default' : 'outline'}
+                    onClick={() => setCategoryFilter('products')}
+                  >
+                    Produits
+                  </Button>
+                  <Button 
+                    variant={categoryFilter === 'services' ? 'default' : 'outline'}
+                    onClick={() => setCategoryFilter('services')}
+                  >
+                    Services
+                  </Button>
                 </div>
+                {(searchQuery || categoryFilter !== 'all') && (
+                  <div className="mt-2 text-sm text-gray-500">
+                    {categoryFilteredProducts.length} résultat(s) trouvé(s)
+                  </div>
+                )}
               </CardContent>
             </Card>
 
             {/* Products Grid */}
             <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
-              {products.map((product) => (
+              {categoryFilteredProducts.map((product) => (
                 <Card key={product._id} className="hover:shadow-md transition-shadow">
                   <CardHeader>
                     <CardTitle className="text-lg font-semibold text-gray-900 flex items-center justify-between">
@@ -222,6 +267,9 @@ const Products = () => {
                           {product.isService ? "Service" : "Produit"}
                         </Badge>
                         <div className="flex space-x-1">
+                          <Button size="sm" variant="ghost" onClick={() => handleViewProduct(product)}>
+                            <Eye className="w-4 h-4" />
+                          </Button>
                           <Button size="sm" variant="ghost" onClick={() => handleEditProduct(product)}>
                             <Edit className="w-4 h-4" />
                           </Button>
@@ -270,10 +318,29 @@ const Products = () => {
                 </Card>
               ))}
             </div>
+
+            {/* No results message */}
+            {(searchQuery || categoryFilter !== 'all') && categoryFilteredProducts.length === 0 && (
+              <div className="text-center py-12">
+                <Package className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+                <h3 className="text-lg font-medium text-gray-900 mb-2">Aucun produit trouvé</h3>
+                <p className="text-gray-500">Essayez de modifier vos critères de recherche</p>
+              </div>
+            )}
           </div>
         </main>
 
         {/* Modals */}
+        <ViewProductModal
+          open={showViewModal}
+          onOpenChange={setShowViewModal}
+          product={selectedProduct}
+          onEdit={(product) => {
+            setShowViewModal(false);
+            handleEditProduct(product);
+          }}
+        />
+
         <ProductForm
           open={showProductForm}
           onOpenChange={setShowProductForm}

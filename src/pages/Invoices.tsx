@@ -1,10 +1,15 @@
-
 import { useState } from "react";
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/layout/AppSidebar";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { 
   FileText, 
   Plus, 
@@ -16,16 +21,26 @@ import {
   Mail,
   Eye,
   Edit,
-  Trash2
+  Trash2,
+  MoreVertical,
+  CheckCircle,
+  Clock,
+  AlertCircle,
+  FileEdit
 } from "lucide-react";
 import { InvoiceForm } from "@/components/forms/InvoiceForm";
 import { ViewInvoiceModal } from "@/components/modals/ViewInvoiceModal";
 import { DeleteConfirmModal } from "@/components/modals/DeleteConfirmModal";
 import { Invoice } from "@/types";
 import { useInvoices, useCreateInvoice, useUpdateInvoice, useDeleteInvoice } from "@/hooks/useInvoices";
+import { useClients } from "@/hooks/useClients";
+import { generateInvoicePDF } from "@/utils/pdfGenerator";
+import { sendInvoiceByEmail } from "@/utils/emailService";
+import { toast } from "sonner";
 
 const Invoices = () => {
   const { data: invoices = [], isLoading } = useInvoices();
+  const { data: clients = [] } = useClients();
   const createInvoiceMutation = useCreateInvoice();
   const updateInvoiceMutation = useUpdateInvoice();
   const deleteInvoiceMutation = useDeleteInvoice();
@@ -35,6 +50,12 @@ const Invoices = () => {
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [selectedInvoice, setSelectedInvoice] = useState<Invoice | null>(null);
   const [editingInvoice, setEditingInvoice] = useState<Invoice | null>(null);
+
+  // Fonction utilitaire pour convertir les dates
+  const formatDate = (dateValue: string | Date) => {
+    const date = typeof dateValue === 'string' ? new Date(dateValue) : dateValue;
+    return date.toLocaleDateString('fr-FR');
+  };
 
   const totalInvoices = invoices.length;
   const paidInvoices = invoices.filter(inv => inv.status === 'paid').length;
@@ -62,22 +83,53 @@ const Invoices = () => {
   };
 
   const handleSubmitInvoice = async (invoiceData: Partial<Invoice>) => {
-    if (editingInvoice) {
-      await updateInvoiceMutation.mutateAsync({
-        id: editingInvoice._id,
-        data: invoiceData
-      });
-    } else {
-      await createInvoiceMutation.mutateAsync(invoiceData);
+    try {
+      if (editingInvoice) {
+        await updateInvoiceMutation.mutateAsync({
+          id: editingInvoice._id,
+          data: invoiceData
+        });
+      } else {
+        await createInvoiceMutation.mutateAsync(invoiceData);
+      }
+      setShowInvoiceForm(false);
+    } catch (error) {
+      console.error('Error submitting invoice:', error);
     }
-    setShowInvoiceForm(false);
   };
 
   const confirmDeleteInvoice = async () => {
     if (selectedInvoice) {
-      await deleteInvoiceMutation.mutateAsync(selectedInvoice._id);
-      setShowDeleteModal(false);
-      setSelectedInvoice(null);
+      try {
+        await deleteInvoiceMutation.mutateAsync(selectedInvoice._id);
+        setShowDeleteModal(false);
+        setSelectedInvoice(null);
+      } catch (error) {
+        console.error('Error deleting invoice:', error);
+      }
+    }
+  };
+
+  // Nouvelle fonction pour changer le statut
+  const handleStatusChange = async (invoice: Invoice, newStatus: string) => {
+    try {
+      console.log(`Changing status of invoice ${invoice.number} to ${newStatus}`);
+      await updateInvoiceMutation.mutateAsync({
+        id: invoice._id,
+        data: { status: newStatus }
+      });
+      
+      const statusMessages = {
+        'paid': 'Facture marquée comme payée',
+        'sent': 'Facture marquée comme envoyée', 
+        'overdue': 'Facture marquée en retard',
+        'draft': 'Facture marquée comme brouillon'
+      };
+      
+      toast.success(statusMessages[newStatus as keyof typeof statusMessages] || 'Statut mis à jour');
+    } catch (error) {
+      console.error('Error updating invoice status:', error);
+      toast.error('Erreur lors de la mise à jour du statut');
     }
   };
 
@@ -93,6 +145,65 @@ const Invoices = () => {
         return <Badge variant="secondary">Brouillon</Badge>;
       default:
         return <Badge variant="secondary">{status}</Badge>;
+    }
+  };
+
+  const handleDownloadPDF = async (invoice: Invoice) => {
+    try {
+      console.log('Attempting to generate PDF for invoice:', invoice._id);
+      console.log('Available clients:', clients.length);
+      
+      // Chercher le client par ID ou par nom
+      let client = clients.find(c => c._id === invoice.client);
+      
+      if (!client) {
+        // Si pas trouvé par ID, chercher par nom
+        client = clients.find(c => c.name === invoice.clientName);
+      }
+      
+      if (!client) {
+        console.error('Client not found for invoice:', invoice);
+        toast.error(`Client non trouvé pour la facture ${invoice.number}`);
+        return;
+      }
+      
+      await generateInvoicePDF(invoice, client);
+      toast.success('PDF généré avec succès');
+    } catch (error) {
+      console.error('Error generating PDF:', error);
+      toast.error('Erreur lors de la génération du PDF');
+    }
+  };
+
+  const handleSendEmail = async (invoice: Invoice) => {
+    try {
+      console.log('Attempting to send email for invoice:', invoice._id);
+      console.log('Available clients:', clients.length);
+      
+      // Chercher le client par ID ou par nom
+      let client = clients.find(c => c._id === invoice.client);
+      
+      if (!client) {
+        // Si pas trouvé par ID, chercher par nom
+        client = clients.find(c => c.name === invoice.clientName);
+      }
+      
+      if (!client) {
+        console.error('Client not found for invoice:', invoice);
+        toast.error(`Client non trouvé pour la facture ${invoice.number}`);
+        return;
+      }
+      
+      await sendInvoiceByEmail(invoice, client);
+      toast.success(`Email envoyé à ${client.email}`);
+      
+      // Mettre à jour le statut à "envoyée" après l'envoi
+      if (invoice.status === 'draft') {
+        await handleStatusChange(invoice, 'sent');
+      }
+    } catch (error) {
+      console.error('Error sending email:', error);
+      toast.error('Erreur lors de l\'envoi de l\'email');
     }
   };
 
@@ -235,11 +346,11 @@ const Invoices = () => {
                               </div>
                               <div className="flex items-center">
                                 <Calendar className="w-4 h-4 mr-1" />
-                                {new Date(invoice.date).toLocaleDateString('fr-FR')}
+                                {formatDate(invoice.date)}
                               </div>
                               <div className="flex items-center">
                                 <Calendar className="w-4 h-4 mr-1" />
-                                Échéance: {new Date(invoice.dueDate).toLocaleDateString('fr-FR')}
+                                Échéance: {formatDate(invoice.dueDate)}
                               </div>
                             </div>
                           </div>
@@ -266,14 +377,42 @@ const Invoices = () => {
                           <Edit className="w-4 h-4 mr-1" />
                           Modifier
                         </Button>
-                        <Button size="sm" variant="outline">
+                        <Button size="sm" variant="outline" onClick={() => handleDownloadPDF(invoice)}>
                           <Download className="w-4 h-4 mr-1" />
                           PDF
                         </Button>
-                        <Button size="sm" variant="outline">
+                        <Button size="sm" variant="outline" onClick={() => handleSendEmail(invoice)}>
                           <Mail className="w-4 h-4 mr-1" />
                           Envoyer
                         </Button>
+                        
+                        {/* Dropdown Menu pour les actions rapides */}
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button size="sm" variant="outline">
+                              <MoreVertical className="w-4 h-4" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end" className="w-48 bg-white border border-gray-200 shadow-lg z-50">
+                            <DropdownMenuItem onClick={() => handleStatusChange(invoice, 'paid')}>
+                              <CheckCircle className="w-4 h-4 mr-2 text-green-600" />
+                              Marquer comme payée
+                            </DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => handleStatusChange(invoice, 'sent')}>
+                              <Mail className="w-4 h-4 mr-2 text-blue-600" />
+                              Marquer comme envoyée
+                            </DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => handleStatusChange(invoice, 'overdue')}>
+                              <AlertCircle className="w-4 h-4 mr-2 text-red-600" />
+                              Marquer en retard
+                            </DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => handleStatusChange(invoice, 'draft')}>
+                              <FileEdit className="w-4 h-4 mr-2 text-gray-600" />
+                              Marquer comme brouillon
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                        
                         <Button size="sm" variant="outline" onClick={() => handleDeleteInvoice(invoice)}>
                           <Trash2 className="w-4 h-4 mr-1" />
                           Supprimer

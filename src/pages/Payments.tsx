@@ -1,14 +1,13 @@
-
 import { useState } from "react";
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/layout/AppSidebar";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { SearchInput } from "@/components/ui/search-input";
 import { 
   CreditCard, 
   Plus, 
-  Search, 
   Euro, 
   Calendar,
   FileText,
@@ -22,6 +21,7 @@ import { DeleteConfirmModal } from "@/components/modals/DeleteConfirmModal";
 import { Payment } from "@/types";
 import { usePayments, useCreatePayment, useUpdatePayment, useDeletePayment } from "@/hooks/usePayments";
 import { useInvoices } from "@/hooks/useInvoices";
+import { useSearch } from "@/hooks/useSearch";
 
 const Payments = () => {
   const { data: payments = [], isLoading } = usePayments();
@@ -30,15 +30,36 @@ const Payments = () => {
   const updatePaymentMutation = useUpdatePayment();
   const deletePaymentMutation = useDeletePayment();
 
+  // Search functionality
+  const { searchQuery, setSearchQuery, filteredData: filteredPayments } = useSearch(
+    payments,
+    [
+      (payment: Payment) => payment._id.slice(0, 8),
+      'method',
+      'reference',
+      (payment: Payment) => payment.amount.toString(),
+      (payment: Payment) => {
+        const invoice = invoices.find(inv => inv._id === payment.invoiceId);
+        return invoice ? `${invoice.number} ${invoice.clientName}` : '';
+      }
+    ]
+  );
+
   const [showPaymentForm, setShowPaymentForm] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [selectedPayment, setSelectedPayment] = useState<Payment | null>(null);
   const [editingPayment, setEditingPayment] = useState<Payment | null>(null);
+  const [methodFilter, setMethodFilter] = useState<string>('all');
 
   const totalPayments = payments.reduce((acc, payment) => acc + payment.amount, 0);
   const paymentsThisMonth = payments.filter(payment => 
     new Date(payment.date).getMonth() === new Date().getMonth()
   ).reduce((acc, payment) => acc + payment.amount, 0);
+
+  // Filter by payment method
+  const methodFilteredPayments = methodFilter === 'all' 
+    ? filteredPayments 
+    : filteredPayments.filter(p => p.method === methodFilter);
 
   const handleCreatePayment = () => {
     setEditingPayment(null);
@@ -215,25 +236,47 @@ const Payments = () => {
             <Card className="mb-6">
               <CardContent className="p-6">
                 <div className="flex items-center space-x-4">
-                  <div className="flex-1 relative">
-                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
-                    <input
-                      type="text"
-                      placeholder="Rechercher un paiement..."
-                      className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
-                    />
-                  </div>
-                  <Button variant="outline">Tous</Button>
-                  <Button variant="outline">Carte</Button>
-                  <Button variant="outline">Virement</Button>
-                  <Button variant="outline">Espèces</Button>
+                  <SearchInput
+                    placeholder="Rechercher un paiement (ID, montant, méthode, référence, facture)..."
+                    onSearch={setSearchQuery}
+                    className="flex-1"
+                  />
+                  <Button 
+                    variant={methodFilter === 'all' ? 'default' : 'outline'}
+                    onClick={() => setMethodFilter('all')}
+                  >
+                    Tous
+                  </Button>
+                  <Button 
+                    variant={methodFilter === 'card' ? 'default' : 'outline'}
+                    onClick={() => setMethodFilter('card')}
+                  >
+                    Carte
+                  </Button>
+                  <Button 
+                    variant={methodFilter === 'transfer' ? 'default' : 'outline'}
+                    onClick={() => setMethodFilter('transfer')}
+                  >
+                    Virement
+                  </Button>
+                  <Button 
+                    variant={methodFilter === 'cash' ? 'default' : 'outline'}
+                    onClick={() => setMethodFilter('cash')}
+                  >
+                    Espèces
+                  </Button>
                 </div>
+                {(searchQuery || methodFilter !== 'all') && (
+                  <div className="mt-2 text-sm text-gray-500">
+                    {methodFilteredPayments.length} résultat(s) trouvé(s)
+                  </div>
+                )}
               </CardContent>
             </Card>
 
             {/* Payments List */}
             <div className="space-y-4">
-              {payments.map((payment) => {
+              {methodFilteredPayments.map((payment) => {
                 const invoice = invoices.find(inv => inv._id === payment.invoiceId);
                 return (
                   <Card key={payment._id} className="hover:shadow-md transition-shadow">
@@ -298,6 +341,15 @@ const Payments = () => {
                 );
               })}
             </div>
+
+            {/* No results message */}
+            {(searchQuery || methodFilter !== 'all') && methodFilteredPayments.length === 0 && (
+              <div className="text-center py-12">
+                <CreditCard className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+                <h3 className="text-lg font-medium text-gray-900 mb-2">Aucun paiement trouvé</h3>
+                <p className="text-gray-500">Essayez de modifier vos critères de recherche</p>
+              </div>
+            )}
           </div>
         </main>
 

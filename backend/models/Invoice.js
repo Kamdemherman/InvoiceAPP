@@ -1,4 +1,3 @@
-
 const mongoose = require('mongoose');
 
 const invoiceItemSchema = new mongoose.Schema({
@@ -32,7 +31,6 @@ const invoiceItemSchema = new mongoose.Schema({
 const invoiceSchema = new mongoose.Schema({
   number: {
     type: String,
-    required: true,
     unique: true,
     trim: true
   },
@@ -91,15 +89,22 @@ const invoiceSchema = new mongoose.Schema({
 
 // Middleware pour générer automatiquement le numéro de facture
 invoiceSchema.pre('save', async function(next) {
-  if (!this.number) {
-    const year = new Date().getFullYear();
-    const count = await this.constructor.countDocuments({
-      createdAt: {
-        $gte: new Date(year, 0, 1),
-        $lt: new Date(year + 1, 0, 1)
-      }
-    });
-    this.number = `FAC-${year}-${String(count + 1).padStart(3, '0')}`;
+  // Ne générer un numéro que pour les nouveaux documents sans numéro
+  if (this.isNew && !this.number) {
+    try {
+      const year = new Date().getFullYear();
+      const count = await this.constructor.countDocuments({
+        createdAt: {
+          $gte: new Date(year, 0, 1),
+          $lt: new Date(year + 1, 0, 1)
+        }
+      });
+      this.number = `FAC-${year}-${String(count + 1).padStart(3, '0')}`;
+      console.log('Generated invoice number:', this.number);
+    } catch (error) {
+      console.error('Error generating invoice number:', error);
+      return next(error);
+    }
   }
   next();
 });

@@ -1,15 +1,24 @@
-
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Eye, Download } from "lucide-react";
+import { 
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { Eye, Download, MoreHorizontal, Mail, Edit } from "lucide-react";
 import { Invoice } from "@/types";
+import { useUpdateInvoice } from "@/hooks/useInvoices";
 
 interface RecentInvoicesProps {
   invoices: Invoice[];
+  onViewInvoice?: (invoice: Invoice) => void;
 }
 
-export function RecentInvoices({ invoices }: RecentInvoicesProps) {
+export function RecentInvoices({ invoices, onViewInvoice }: RecentInvoicesProps) {
+  const updateInvoiceMutation = useUpdateInvoice();
+
   const getStatusBadge = (status: Invoice['status']) => {
     const statusConfig = {
       draft: { color: 'bg-gray-100 text-gray-800', text: 'Brouillon' },
@@ -24,6 +33,28 @@ export function RecentInvoices({ invoices }: RecentInvoicesProps) {
         {config.text}
       </Badge>
     );
+  };
+
+  const formatDate = (dateValue: string | Date) => {
+    const date = typeof dateValue === 'string' ? new Date(dateValue) : dateValue;
+    return date.toLocaleDateString('fr-FR');
+  };
+
+  const handleStatusChange = (invoice: Invoice, newStatus: Invoice['status']) => {
+    updateInvoiceMutation.mutate({
+      id: invoice._id,
+      data: { status: newStatus }
+    });
+  };
+
+  const handleSendEmail = async (invoice: Invoice) => {
+    try {
+      // Simuler l'envoi d'email
+      console.log('Envoi d\'email pour la facture:', invoice.number);
+      // Ici vous pourriez appeler votre service d'email
+    } catch (error) {
+      console.error('Erreur lors de l\'envoi de l\'email:', error);
+    }
   };
 
   return (
@@ -51,7 +82,7 @@ export function RecentInvoices({ invoices }: RecentInvoicesProps) {
                       {invoice.total.toFixed(2)} €
                     </p>
                     <p className="text-sm text-gray-500">
-                      {invoice.date.toLocaleDateString('fr-FR')}
+                      {formatDate(invoice.date)}
                     </p>
                   </div>
                 </div>
@@ -59,12 +90,42 @@ export function RecentInvoices({ invoices }: RecentInvoicesProps) {
               <div className="flex items-center space-x-3">
                 {getStatusBadge(invoice.status)}
                 <div className="flex space-x-1">
-                  <Button size="sm" variant="ghost" className="p-2">
+                  <Button 
+                    size="sm" 
+                    variant="ghost" 
+                    className="p-2"
+                    onClick={() => onViewInvoice?.(invoice)}
+                  >
                     <Eye className="w-4 h-4" />
                   </Button>
                   <Button size="sm" variant="ghost" className="p-2">
                     <Download className="w-4 h-4" />
                   </Button>
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button size="sm" variant="ghost" className="p-2">
+                        <MoreHorizontal className="w-4 h-4" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                      <DropdownMenuItem onClick={() => handleSendEmail(invoice)}>
+                        <Mail className="w-4 h-4 mr-2" />
+                        Envoyer par email
+                      </DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => handleStatusChange(invoice, 'sent')}>
+                        <Edit className="w-4 h-4 mr-2" />
+                        Marquer comme envoyée
+                      </DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => handleStatusChange(invoice, 'paid')}>
+                        <Edit className="w-4 h-4 mr-2" />
+                        Marquer comme payée
+                      </DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => handleStatusChange(invoice, 'overdue')}>
+                        <Edit className="w-4 h-4 mr-2" />
+                        Marquer en retard
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
                 </div>
               </div>
             </div>

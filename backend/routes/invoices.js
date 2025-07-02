@@ -1,4 +1,3 @@
-
 const express = require('express');
 const router = express.Router();
 const Invoice = require('../models/Invoice');
@@ -34,12 +33,22 @@ router.get('/:id', async (req, res) => {
 // POST /api/invoices - Create new invoice
 router.post('/', async (req, res) => {
   try {
-    const invoice = new Invoice(req.body);
+    console.log('Creating invoice with data:', req.body);
+    
+    // S'assurer que le champ number n'est pas inclus pour les nouvelles factures
+    const invoiceData = { ...req.body };
+    delete invoiceData.number; // Supprimer le champ number pour laisser le middleware le générer
+    
+    const invoice = new Invoice(invoiceData);
     const savedInvoice = await invoice.save();
+    
+    console.log('Invoice created with number:', savedInvoice.number);
+    
     await savedInvoice.populate('client', 'name email');
     await savedInvoice.populate('items.product', 'name');
     res.status(201).json(savedInvoice);
   } catch (error) {
+    console.error('Error creating invoice:', error);
     res.status(400).json({ message: error.message });
   }
 });

@@ -1,4 +1,3 @@
-
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/layout/AppSidebar";
 import { Button } from "@/components/ui/button";
@@ -12,10 +11,84 @@ import {
   Shield,
   Palette,
   Download,
-  Upload
+  Upload,
+  Camera
 } from "lucide-react";
+import { useCompanySettings, useUserSettings, useUpdateCompanySettings, useUpdateUserSettings, useUploadLogo } from "@/hooks/useSettings";
+import { useState, useRef } from "react";
 
 const Settings = () => {
+  const { data: companySettings, isLoading: companyLoading } = useCompanySettings();
+  const { data: userSettings, isLoading: userLoading } = useUserSettings();
+  const updateCompanyMutation = useUpdateCompanySettings();
+  const updateUserMutation = useUpdateUserSettings();
+  const uploadLogoMutation = useUploadLogo();
+  
+  const [activeSection, setActiveSection] = useState('profile');
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const [userForm, setUserForm] = useState(userSettings || {
+    name: '',
+    email: '',
+    phone: '',
+    position: ''
+  });
+
+  const [companyForm, setCompanyForm] = useState(companySettings || {
+    companyName: '',
+    siret: '',
+    vatNumber: '',
+    address: '',
+    logo: '',
+    invoicePrefix: '',
+    paymentDelay: 30,
+    defaultVatRate: 20,
+    currency: 'FCFA',
+    legalMentions: ''
+  });
+
+  // Update forms when data loads
+  useState(() => {
+    if (userSettings) setUserForm(userSettings);
+    if (companySettings) setCompanyForm(companySettings);
+  });
+
+  const handleUserSave = () => {
+    updateUserMutation.mutate(userForm);
+  };
+
+  const handleCompanySave = () => {
+    updateCompanyMutation.mutate(companyForm);
+  };
+
+  const handleLogoUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file) {
+      uploadLogoMutation.mutate(file, {
+        onSuccess: (data) => {
+          setCompanyForm(prev => ({ ...prev, logo: data.logoUrl }));
+        }
+      });
+    }
+  };
+
+  if (companyLoading || userLoading) {
+    return (
+      <SidebarProvider>
+        <div className="min-h-screen flex w-full bg-gray-50">
+          <AppSidebar />
+          <main className="flex-1 p-6">
+            <div className="max-w-7xl mx-auto">
+              <div className="text-center py-20">
+                <div className="text-lg">Chargement des paramètres...</div>
+              </div>
+            </div>
+          </main>
+        </div>
+      </SidebarProvider>
+    );
+  }
+
   return (
     <SidebarProvider>
       <div className="min-h-screen flex w-full bg-gray-50">
@@ -42,30 +115,39 @@ const Settings = () => {
                 <Card>
                   <CardContent className="p-4">
                     <nav className="space-y-1">
-                      <a href="#profile" className="flex items-center px-3 py-2 text-sm font-medium text-gray-900 bg-primary-50 rounded-lg">
+                      <button
+                        onClick={() => setActiveSection('profile')}
+                        className={`w-full flex items-center px-3 py-2 text-sm font-medium rounded-lg ${
+                          activeSection === 'profile' 
+                            ? 'text-gray-900 bg-primary-50' 
+                            : 'text-gray-600 hover:bg-gray-50'
+                        }`}
+                      >
                         <User className="w-4 h-4 mr-3" />
                         Profil utilisateur
-                      </a>
-                      <a href="#company" className="flex items-center px-3 py-2 text-sm font-medium text-gray-600 hover:bg-gray-50 rounded-lg">
+                      </button>
+                      <button
+                        onClick={() => setActiveSection('company')}
+                        className={`w-full flex items-center px-3 py-2 text-sm font-medium rounded-lg ${
+                          activeSection === 'company' 
+                            ? 'text-gray-900 bg-primary-50' 
+                            : 'text-gray-600 hover:bg-gray-50'
+                        }`}
+                      >
                         <Building className="w-4 h-4 mr-3" />
                         Informations entreprise
-                      </a>
-                      <a href="#invoices" className="flex items-center px-3 py-2 text-sm font-medium text-gray-600 hover:bg-gray-50 rounded-lg">
+                      </button>
+                      <button
+                        onClick={() => setActiveSection('invoices')}
+                        className={`w-full flex items-center px-3 py-2 text-sm font-medium rounded-lg ${
+                          activeSection === 'invoices' 
+                            ? 'text-gray-900 bg-primary-50' 
+                            : 'text-gray-600 hover:bg-gray-50'
+                        }`}
+                      >
                         <FileText className="w-4 h-4 mr-3" />
                         Paramètres factures
-                      </a>
-                      <a href="#notifications" className="flex items-center px-3 py-2 text-sm font-medium text-gray-600 hover:bg-gray-50 rounded-lg">
-                        <Bell className="w-4 h-4 mr-3" />
-                        Notifications
-                      </a>
-                      <a href="#security" className="flex items-center px-3 py-2 text-sm font-medium text-gray-600 hover:bg-gray-50 rounded-lg">
-                        <Shield className="w-4 h-4 mr-3" />
-                        Sécurité
-                      </a>
-                      <a href="#appearance" className="flex items-center px-3 py-2 text-sm font-medium text-gray-600 hover:bg-gray-50 rounded-lg">
-                        <Palette className="w-4 h-4 mr-3" />
-                        Apparence
-                      </a>
+                      </button>
                     </nav>
                   </CardContent>
                 </Card>
@@ -74,180 +156,252 @@ const Settings = () => {
               {/* Contenu principal */}
               <div className="lg:col-span-2 space-y-6">
                 {/* Profil utilisateur */}
-                <Card id="profile">
-                  <CardHeader>
-                    <CardTitle className="flex items-center">
-                      <User className="w-5 h-5 mr-2" />
-                      Profil utilisateur
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent className="space-y-4">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">
-                          Nom
-                        </label>
-                        <input
-                          type="text"
-                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
-                          defaultValue="Jean Dupont"
-                        />
+                {activeSection === 'profile' && (
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="flex items-center">
+                        <User className="w-5 h-5 mr-2" />
+                        Profil utilisateur
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-1">
+                            Nom
+                          </label>
+                          <input
+                            type="text"
+                            value={userForm.name}
+                            onChange={(e) => setUserForm(prev => ({ ...prev, name: e.target.value }))}
+                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-1">
+                            Email
+                          </label>
+                          <input
+                            type="email"
+                            value={userForm.email}
+                            onChange={(e) => setUserForm(prev => ({ ...prev, email: e.target.value }))}
+                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-1">
+                            Téléphone
+                          </label>
+                          <input
+                            type="tel"
+                            value={userForm.phone}
+                            onChange={(e) => setUserForm(prev => ({ ...prev, phone: e.target.value }))}
+                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-1">
+                            Fonction
+                          </label>
+                          <input
+                            type="text"
+                            value={userForm.position}
+                            onChange={(e) => setUserForm(prev => ({ ...prev, position: e.target.value }))}
+                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                          />
+                        </div>
                       </div>
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">
-                          Email
-                        </label>
-                        <input
-                          type="email"
-                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
-                          defaultValue="jean.dupont@example.com"
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">
-                          Téléphone
-                        </label>
-                        <input
-                          type="tel"
-                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
-                          defaultValue="+33 1 23 45 67 89"
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">
-                          Fonction
-                        </label>
-                        <input
-                          type="text"
-                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
-                          defaultValue="Gérant"
-                        />
-                      </div>
-                    </div>
-                    <Button>Enregistrer les modifications</Button>
-                  </CardContent>
-                </Card>
+                      <Button 
+                        onClick={handleUserSave}
+                        disabled={updateUserMutation.isPending}
+                      >
+                        {updateUserMutation.isPending ? 'Enregistrement...' : 'Enregistrer les modifications'}
+                      </Button>
+                    </CardContent>
+                  </Card>
+                )}
 
                 {/* Informations entreprise */}
-                <Card id="company">
-                  <CardHeader>
-                    <CardTitle className="flex items-center">
-                      <Building className="w-5 h-5 mr-2" />
-                      Informations entreprise
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent className="space-y-4">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div className="md:col-span-2">
-                        <label className="block text-sm font-medium text-gray-700 mb-1">
-                          Nom de l'entreprise
-                        </label>
-                        <input
-                          type="text"
-                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
-                          defaultValue="FactureZenith SARL"
-                        />
-                      </div>
+                {activeSection === 'company' && (
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="flex items-center">
+                        <Building className="w-5 h-5 mr-2" />
+                        Informations entreprise
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                      {/* Logo Upload */}
                       <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">
-                          SIRET
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                          Logo de l'entreprise
                         </label>
-                        <input
-                          type="text"
-                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
-                          defaultValue="12345678901234"
-                        />
+                        <div className="flex items-center space-x-4">
+                          {companyForm.logo && (
+                            <img 
+                              src={companyForm.logo} 
+                              alt="Logo entreprise" 
+                              className="w-16 h-16 object-contain border border-gray-200 rounded-lg"
+                            />
+                          )}
+                          <div>
+                            <input
+                              ref={fileInputRef}
+                              type="file"
+                              accept="image/*"
+                              onChange={handleLogoUpload}
+                              className="hidden"
+                            />
+                            <Button
+                              variant="outline"
+                              onClick={() => fileInputRef.current?.click()}
+                              disabled={uploadLogoMutation.isPending}
+                              className="flex items-center"
+                            >
+                              <Camera className="w-4 h-4 mr-2" />
+                              {uploadLogoMutation.isPending ? 'Téléchargement...' : 'Changer le logo'}
+                            </Button>
+                          </div>
+                        </div>
                       </div>
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">
-                          TVA Intracommunautaire
-                        </label>
-                        <input
-                          type="text"
-                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
-                          defaultValue="FR12345678901"
-                        />
+
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div className="md:col-span-2">
+                          <label className="block text-sm font-medium text-gray-700 mb-1">
+                            Nom de l'entreprise
+                          </label>
+                          <input
+                            type="text"
+                            value={companyForm.companyName}
+                            onChange={(e) => setCompanyForm(prev => ({ ...prev, companyName: e.target.value }))}
+                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-1">
+                            SIRET
+                          </label>
+                          <input
+                            type="text"
+                            value={companyForm.siret}
+                            onChange={(e) => setCompanyForm(prev => ({ ...prev, siret: e.target.value }))}
+                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-1">
+                            TVA Intracommunautaire
+                          </label>
+                          <input
+                            type="text"
+                            value={companyForm.vatNumber}
+                            onChange={(e) => setCompanyForm(prev => ({ ...prev, vatNumber: e.target.value }))}
+                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                          />
+                        </div>
+                        <div className="md:col-span-2">
+                          <label className="block text-sm font-medium text-gray-700 mb-1">
+                            Adresse
+                          </label>
+                          <textarea
+                            value={companyForm.address}
+                            onChange={(e) => setCompanyForm(prev => ({ ...prev, address: e.target.value }))}
+                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                            rows={3}
+                          />
+                        </div>
                       </div>
-                      <div className="md:col-span-2">
-                        <label className="block text-sm font-medium text-gray-700 mb-1">
-                          Adresse
-                        </label>
-                        <textarea
-                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
-                          rows={3}
-                          defaultValue="123 Rue de la Facturation&#10;75001 Paris&#10;France"
-                        ></textarea>
-                      </div>
-                    </div>
-                    <Button>Enregistrer les modifications</Button>
-                  </CardContent>
-                </Card>
+                      <Button 
+                        onClick={handleCompanySave}
+                        disabled={updateCompanyMutation.isPending}
+                      >
+                        {updateCompanyMutation.isPending ? 'Enregistrement...' : 'Enregistrer les modifications'}
+                      </Button>
+                    </CardContent>
+                  </Card>
+                )}
 
                 {/* Paramètres des factures */}
-                <Card id="invoices">
-                  <CardHeader>
-                    <CardTitle className="flex items-center">
-                      <FileText className="w-5 h-5 mr-2" />
-                      Paramètres des factures
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent className="space-y-4">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">
-                          Préfixe numérotation
-                        </label>
-                        <input
-                          type="text"
-                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
-                          defaultValue="FZ-"
-                        />
+                {activeSection === 'invoices' && (
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="flex items-center">
+                        <FileText className="w-5 h-5 mr-2" />
+                        Paramètres des factures
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-1">
+                            Préfixe numérotation
+                          </label>
+                          <input
+                            type="text"
+                            value={companyForm.invoicePrefix}
+                            onChange={(e) => setCompanyForm(prev => ({ ...prev, invoicePrefix: e.target.value }))}
+                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-1">
+                            Délai de paiement (jours)
+                          </label>
+                          <input
+                            type="number"
+                            value={companyForm.paymentDelay}
+                            onChange={(e) => setCompanyForm(prev => ({ ...prev, paymentDelay: parseInt(e.target.value) }))}
+                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-1">
+                            Taux de TVA par défaut (%)
+                          </label>
+                          <input
+                            type="number"
+                            step="0.01"
+                            value={companyForm.defaultVatRate}
+                            onChange={(e) => setCompanyForm(prev => ({ ...prev, defaultVatRate: parseFloat(e.target.value) }))}
+                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-1">
+                            Devise
+                          </label>
+                          <select 
+                            value={companyForm.currency}
+                            onChange={(e) => setCompanyForm(prev => ({ ...prev, currency: e.target.value }))}
+                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                          >
+                            <option value="EUR">Euro (€)</option>
+                            <option value="USD">Dollar ($)</option>
+                            <option value="GBP">Livre (£)</option>
+                            <option value="FCFA">FCFA</option>
+                          </select>
+                        </div>
+                        <div className="md:col-span-2">
+                          <label className="block text-sm font-medium text-gray-700 mb-1">
+                            Mentions légales
+                          </label>
+                          <textarea
+                            value={companyForm.legalMentions}
+                            onChange={(e) => setCompanyForm(prev => ({ ...prev, legalMentions: e.target.value }))}
+                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                            rows={3}
+                          />
+                        </div>
                       </div>
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">
-                          Délai de paiement (jours)
-                        </label>
-                        <input
-                          type="number"
-                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
-                          defaultValue="30"
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">
-                          Taux de TVA par défaut (%)
-                        </label>
-                        <input
-                          type="number"
-                          step="0.01"
-                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
-                          defaultValue="20"
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">
-                          Devise
-                        </label>
-                        <select className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent">
-                          <option value="EUR">Euro (€)</option>
-                          <option value="USD">Dollar ($)</option>
-                          <option value="GBP">Livre (£)</option>
-                        </select>
-                      </div>
-                      <div className="md:col-span-2">
-                        <label className="block text-sm font-medium text-gray-700 mb-1">
-                          Mentions légales
-                        </label>
-                        <textarea
-                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
-                          rows={3}
-                          defaultValue="En cas de retard de paiement, des pénalités de retard au taux de 3 fois le taux d'intérêt légal seront appliquées."
-                        ></textarea>
-                      </div>
-                    </div>
-                    <Button>Enregistrer les modifications</Button>
-                  </CardContent>
-                </Card>
+                      <Button 
+                        onClick={handleCompanySave}
+                        disabled={updateCompanyMutation.isPending}
+                      >
+                        {updateCompanyMutation.isPending ? 'Enregistrement...' : 'Enregistrer les modifications'}
+                      </Button>
+                    </CardContent>
+                  </Card>
+                )}
 
                 {/* Sauvegarde et restauration */}
                 <Card>

@@ -73,14 +73,10 @@ export function AppSidebar() {
             <FileText className="w-5 h-5 text-white" />
           </div>
           <div>
-            <h1 className="text-lg font-bold text-gray-900">FactureZenith</h1>
+            <h1 className="text-lg font-bold text-gray-900">Invoice App</h1>
             <p className="text-sm text-gray-500">Gestion de facturation</p>
           </div>
         </div>
-        <Button className="w-full bg-primary-600 hover:bg-primary-700 text-white">
-          <Plus className="w-4 h-4 mr-2" />
-          Nouvelle Facture
-        </Button>
       </SidebarHeader>
 
       <SidebarContent className="p-4">
