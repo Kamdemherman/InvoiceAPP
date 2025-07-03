@@ -56,7 +56,7 @@ export const PaymentForm = ({ open, onOpenChange, payment, onSubmit }: PaymentFo
               <SelectContent>
                 {invoices.map(invoice => (
                   <SelectItem key={invoice._id} value={invoice._id}>
-                    {invoice.number} - {invoice.clientName} ({invoice.total.toFixed(2)} €)
+                    {invoice.number} - {invoice.clientName} ({invoice.total.toFixed(2)} FCFA)
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -65,7 +65,7 @@ export const PaymentForm = ({ open, onOpenChange, payment, onSubmit }: PaymentFo
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <Label htmlFor="amount">Montant (€)</Label>
+              <Label htmlFor="amount">Montant (FCFA)</Label>
               <Input
                 id="amount"
                 type="number"

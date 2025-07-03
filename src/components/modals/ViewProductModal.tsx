@@ -57,7 +57,7 @@ export const ViewProductModal = ({ open, onOpenChange, product, onEdit }: ViewPr
               </div>
               <div className="flex items-center">
                 <Euro className="w-4 h-4 mr-2 text-gray-500" />
-                <span className="text-sm">Prix: {product.price.toFixed(2)} €</span>
+                <span className="text-sm">Prix: {product.price.toFixed(2)} FCFA</span>
               </div>
               {!product.isService && (
                 <div className="flex items-center">
@@ -79,7 +79,7 @@ export const ViewProductModal = ({ open, onOpenChange, product, onEdit }: ViewPr
             <div className="flex items-center justify-center">
               <Euro className="w-6 h-6 text-green-600 mr-2" />
               <span className="text-3xl font-bold text-green-600">
-                {product.price.toFixed(2)} €
+                {product.price.toFixed(2)} FCFA
               </span>
             </div>
           </div>

@@ -5,6 +5,15 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { SearchInput } from "@/components/ui/search-input";
 import { 
+  Pagination,
+  PaginationContent,
+  PaginationItem,
+  PaginationLink,
+  PaginationNext,
+  PaginationPrevious,
+  PaginationEllipsis
+} from "@/components/ui/pagination";
+import { 
   Package, 
   Plus, 
   Euro, 
@@ -23,6 +32,7 @@ import { DeleteConfirmModal } from "@/components/modals/DeleteConfirmModal";
 import { Product } from "@/types";
 import { useProducts, useCreateProduct, useUpdateProduct, useDeleteProduct } from "@/hooks/useProducts";
 import { useSearch } from "@/hooks/useSearch";
+import { usePagination } from "@/hooks/usePagination";
 import { useState } from "react";
 
 const Products = () => {
@@ -61,6 +71,19 @@ const Products = () => {
     : categoryFilter === 'services'
     ? filteredProducts.filter(p => p.isService)
     : filteredProducts.filter(p => !p.isService);
+
+  // Pagination
+  const {
+    currentPage,
+    totalPages,
+    paginatedData: paginatedProducts,
+    goToPage,
+    goToPrevious,
+    goToNext,
+    totalItems,
+    startIndex,
+    endIndex
+  } = usePagination(categoryFilteredProducts, 9); // 9 items per page for 3x3 grid
 
   const handleCreateProduct = () => {
     setEditingProduct(null);
@@ -212,7 +235,7 @@ const Products = () => {
                     </div>
                     <div className="ml-4">
                       <p className="text-sm font-medium text-gray-600">Prix Moyen</p>
-                      <p className="text-2xl font-bold text-gray-900">{averagePrice.toFixed(2)} €</p>
+                      <p className="text-2xl font-bold text-gray-900">{averagePrice.toFixed(2)} FCFA</p>
                     </div>
                   </div>
                 </CardContent>
@@ -222,7 +245,7 @@ const Products = () => {
             {/* Search and Filters */}
             <Card className="mb-6">
               <CardContent className="p-6">
-                <div className="flex items-center space-x-4">
+                <div className="flex items-center space-x-4 mb-4">
                   <SearchInput
                     placeholder="Rechercher un produit (nom, description, catégorie, prix)..."
                     onSearch={setSearchQuery}
@@ -247,17 +270,16 @@ const Products = () => {
                     Services
                   </Button>
                 </div>
-                {(searchQuery || categoryFilter !== 'all') && (
-                  <div className="mt-2 text-sm text-gray-500">
-                    {categoryFilteredProducts.length} résultat(s) trouvé(s)
-                  </div>
-                )}
+                <div className="text-sm text-gray-500">
+                  {(searchQuery || categoryFilter !== 'all') && `${categoryFilteredProducts.length} résultat(s) trouvé(s) - `}
+                  Affichage de {startIndex} à {endIndex} sur {totalItems} produits
+                </div>
               </CardContent>
             </Card>
 
             {/* Products Grid */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
-              {categoryFilteredProducts.map((product) => (
+            <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6 mb-6">
+              {paginatedProducts.map((product) => (
                 <Card key={product._id} className="hover:shadow-md transition-shadow">
                   <CardHeader>
                     <CardTitle className="text-lg font-semibold text-gray-900 flex items-center justify-between">
@@ -300,7 +322,7 @@ const Products = () => {
                         <div className="flex items-center">
                           <Euro className="w-4 h-4 mr-1 text-green-600" />
                           <span className="text-xl font-bold text-green-600">
-                            {product.price.toFixed(2)} €
+                            {product.price.toFixed(2)} FCFA
                           </span>
                         </div>
                         <div className="text-xs text-gray-500">
@@ -309,15 +331,68 @@ const Products = () => {
                       </div>
                       
                       <div className="flex space-x-2 pt-2">
-                        <Button size="sm" className="flex-1">
+                        {/* <Button size="sm" className="flex-1">
                           Ajouter à Facture
-                        </Button>
+                        </Button> */}
                       </div>
                     </div>
                   </CardContent>
                 </Card>
               ))}
             </div>
+
+            {/* Pagination */}
+            {totalPages > 1 && (
+              <div className="flex justify-center mb-6">
+                <Pagination>
+                  <PaginationContent>
+                    <PaginationItem>
+                      <PaginationPrevious 
+                        onClick={goToPrevious}
+                        className={currentPage === 1 ? "pointer-events-none opacity-50" : "cursor-pointer"}
+                      />
+                    </PaginationItem>
+                    
+                    {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => {
+                      if (
+                        page === 1 ||
+                        page === totalPages ||
+                        (page >= currentPage - 1 && page <= currentPage + 1)
+                      ) {
+                        return (
+                          <PaginationItem key={page}>
+                            <PaginationLink
+                              onClick={() => goToPage(page)}
+                              isActive={currentPage === page}
+                              className="cursor-pointer"
+                            >
+                              {page}
+                            </PaginationLink>
+                          </PaginationItem>
+                        );
+                      } else if (
+                        page === currentPage - 2 ||
+                        page === currentPage + 2
+                      ) {
+                        return (
+                          <PaginationItem key={page}>
+                            <PaginationEllipsis />
+                          </PaginationItem>
+                        );
+                      }
+                      return null;
+                    })}
+                    
+                    <PaginationItem>
+                      <PaginationNext 
+                        onClick={goToNext}
+                        className={currentPage === totalPages ? "pointer-events-none opacity-50" : "cursor-pointer"}
+                      />
+                    </PaginationItem>
+                  </PaginationContent>
+                </Pagination>
+              </div>
+            )}
 
             {/* No results message */}
             {(searchQuery || categoryFilter !== 'all') && categoryFilteredProducts.length === 0 && (

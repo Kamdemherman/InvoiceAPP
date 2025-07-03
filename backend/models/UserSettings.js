@@ -9,8 +9,7 @@ const userSettingsSchema = new mongoose.Schema({
   email: {
     type: String,
     required: true,
-    trim: true,
-    lowercase: true
+    trim: true
   },
   phone: {
     type: String,

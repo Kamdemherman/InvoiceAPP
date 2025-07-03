@@ -20,6 +20,7 @@ app.use('/api/products', require('./routes/products'));
 app.use('/api/invoices', require('./routes/invoices'));
 app.use('/api/payments', require('./routes/payments'));
 app.use('/api/settings', require('./routes/settings'));
+app.use('/api/reminders', require('./routes/reminders'));
 app.use('/api', require('./routes/email'));
 
 // MongoDB Connection
@@ -41,7 +42,8 @@ app.get('/', (req, res) => {
       products: '/api/products',  
       invoices: '/api/invoices',
       payments: '/api/payments',
-      settings: '/api/settings'
+      settings: '/api/settings',
+      reminders: '/api/reminders'
     }
   });
 });

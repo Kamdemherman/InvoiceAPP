@@ -68,6 +68,23 @@ export interface Payment {
   updatedAt: Date;
 }
 
+export interface Reminder {
+  _id: string;
+  invoice: string;
+  invoiceNumber: string;
+  clientEmail: string;
+  clientName: string;
+  type: 'overdue' | 'weekly';
+  sentAt: Date;
+  nextReminderDate: Date;
+  reminderCount: number;
+  status: 'sent' | 'failed' | 'cancelled';
+  emailSubject: string;
+  emailBody: string;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
 export interface DashboardStats {
   totalRevenue: number;
   monthlyRevenue: number;

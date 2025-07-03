@@ -38,7 +38,7 @@ const clientSchema = new mongoose.Schema({
     country: {
       type: String,
       required: true,
-      default: 'France',
+      default: 'Cameroun',
       trim: true
     }
   }

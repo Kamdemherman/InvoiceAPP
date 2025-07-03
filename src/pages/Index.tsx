@@ -80,7 +80,7 @@ const Index = () => {
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
               <StatsCard
                 title="Chiffre d'affaires total"
-                value={`${stats.totalRevenue.toLocaleString('fr-FR')} €`}
+                value={`${stats.totalRevenue.toLocaleString('fr-FR')} FCFA`}
   
                 changeType="positive"
                 icon={Euro}
@@ -88,7 +88,7 @@ const Index = () => {
               />
               <StatsCard
                 title="CA ce mois"
-                value={`${stats.monthlyRevenue.toLocaleString('fr-FR')} €`}
+                value={`${stats.monthlyRevenue.toLocaleString('fr-FR')} FCFA`}
                 changeType="positive"
                 icon={TrendingUp}
               />

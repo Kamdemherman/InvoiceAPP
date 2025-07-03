@@ -1,9 +1,19 @@
+
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/layout/AppSidebar";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { SearchInput } from "@/components/ui/search-input";
+import { 
+  Pagination,
+  PaginationContent,
+  PaginationItem,
+  PaginationLink,
+  PaginationNext,
+  PaginationPrevious,
+  PaginationEllipsis
+} from "@/components/ui/pagination";
 import { 
   Users, 
   Plus, 
@@ -22,12 +32,13 @@ import { ClientForm } from "@/components/forms/ClientForm";
 import { ViewClientModal } from "@/components/modals/ViewClientModal";
 import { DeleteConfirmModal } from "@/components/modals/DeleteConfirmModal";
 import { Client } from "@/types";
-import { useClients, useCreateClient, useUpdateClient, useDeleteClient } from "@/hooks/useClients";
+import { useClientsWithStats, useCreateClient, useUpdateClient, useDeleteClient } from "@/hooks/useClients";
 import { useSearch } from "@/hooks/useSearch";
+import { usePagination } from "@/hooks/usePagination";
 import { useState } from "react";
 
 const Clients = () => {
-  const { data: clients = [], isLoading, error } = useClients();
+  const { data: clients = [], isLoading, error } = useClientsWithStats();
   const createClientMutation = useCreateClient();
   const updateClientMutation = useUpdateClient();
   const deleteClientMutation = useDeleteClient();
@@ -43,6 +54,19 @@ const Clients = () => {
       (client: Client) => client.address.street
     ]
   );
+
+  // Pagination
+  const {
+    currentPage,
+    totalPages,
+    paginatedData: paginatedClients,
+    goToPage,
+    goToPrevious,
+    goToNext,
+    totalItems,
+    startIndex,
+    endIndex
+  } = usePagination(filteredClients, 9); // 9 items per page for 3x3 grid
 
   const [showClientForm, setShowClientForm] = useState(false);
   const [showViewModal, setShowViewModal] = useState(false);
@@ -173,7 +197,7 @@ const Clients = () => {
                     <div className="ml-4">
                       <p className="text-sm font-medium text-gray-600">CA Total</p>
                       <p className="text-2xl font-bold text-gray-900">
-                        {clients.reduce((acc, client) => acc + (client.totalAmount || 0), 0).toLocaleString('fr-FR')} €
+                        {clients.reduce((acc, client) => acc + (client.totalAmount || 0), 0).toLocaleString('fr-FR')} FCFA
                       </p>
                     </div>
                   </div>
@@ -189,7 +213,7 @@ const Clients = () => {
                     <div className="ml-4">
                       <p className="text-sm font-medium text-gray-600">Impayés</p>
                       <p className="text-2xl font-bold text-gray-900">
-                        {clients.reduce((acc, client) => acc + (client.pendingAmount || 0), 0).toLocaleString('fr-FR')} €
+                        {clients.reduce((acc, client) => acc + (client.pendingAmount || 0), 0).toLocaleString('fr-FR')} FCFA
                       </p>
                     </div>
                   </div>
@@ -220,18 +244,19 @@ const Clients = () => {
                   <SearchInput
                     placeholder="Rechercher un client (nom, email, téléphone, adresse)..."
                     onSearch={setSearchQuery}
-                    className="flex-1 mr-4"
+                    className="flex-1 mr-96"
                   />
                   <div className="text-sm text-gray-500">
-                    {searchQuery && `${filteredClients.length} résultat(s) trouvé(s)`}
+                    {searchQuery && `${filteredClients.length} résultat(s) trouvé(s) - `}
+                    Affichage de {startIndex} à {endIndex} sur {totalItems} clients
                   </div>
                 </div>
               </CardContent>
             </Card>
 
             {/* Clients List */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
-              {filteredClients.map((client) => (
+            <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6 mb-6">
+              {paginatedClients.map((client) => (
                 <Card key={client._id} className="hover:shadow-md transition-shadow">
                   <CardHeader>
                     <CardTitle className="text-lg font-semibold text-gray-900 flex items-center justify-between">
@@ -239,6 +264,9 @@ const Clients = () => {
                       <div className="flex items-center space-x-2">
                         {(client.pendingAmount || 0) > 0 && (
                           <Badge variant="destructive">Impayé</Badge>
+                        )}
+                        {(client.totalAmount || 0) > 0 && (client.pendingAmount || 0) === 0 && (
+                          <Badge className="bg-green-100 text-green-800">Actif</Badge>
                         )}
                         <div className="flex space-x-1">
                           <Button size="sm" variant="ghost" onClick={() => handleViewClient(client)}>
@@ -277,22 +305,84 @@ const Clients = () => {
                           </div>
                           <div>
                             <p className="text-gray-500">CA Total</p>
-                            <p className="font-semibold">{(client.totalAmount || 0).toLocaleString('fr-FR')} €</p>
+                            <p className="font-semibold">{(client.totalAmount || 0).toLocaleString('fr-FR')} FCFA</p>
                           </div>
                         </div>
+                        {(client.pendingAmount || 0) > 0 && (
+                          <div className="mt-2 pt-2 border-t border-gray-100">
+                            <div className="text-sm">
+                              <p className="text-red-600 font-medium">
+                                Impayé: {(client.pendingAmount || 0).toLocaleString('fr-FR')} FCFA
+                              </p>
+                            </div>
+                          </div>
+                        )}
                       </div>
                       
                       <div className="flex space-x-2 pt-2">
-                        <Button size="sm" variant="outline" className="flex-1">
+                        {/* <Button size="sm" variant="outline" className="flex-1">
                           <FileText className="w-4 h-4 mr-1" />
                           Nouvelle Facture
-                        </Button>
+                        </Button> */}
                       </div>
                     </div>
                   </CardContent>
                 </Card>
               ))}
             </div>
+
+            {/* Pagination */}
+            {totalPages > 1 && (
+              <div className="flex justify-center">
+                <Pagination>
+                  <PaginationContent>
+                    <PaginationItem>
+                      <PaginationPrevious 
+                        onClick={goToPrevious}
+                        className={currentPage === 1 ? "pointer-events-none opacity-50" : "cursor-pointer"}
+                      />
+                    </PaginationItem>
+                    
+                    {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => {
+                      if (
+                        page === 1 ||
+                        page === totalPages ||
+                        (page >= currentPage - 1 && page <= currentPage + 1)
+                      ) {
+                        return (
+                          <PaginationItem key={page}>
+                            <PaginationLink
+                              onClick={() => goToPage(page)}
+                              isActive={currentPage === page}
+                              className="cursor-pointer"
+                            >
+                              {page}
+                            </PaginationLink>
+                          </PaginationItem>
+                        );
+                      } else if (
+                        page === currentPage - 2 ||
+                        page === currentPage + 2
+                      ) {
+                        return (
+                          <PaginationItem key={page}>
+                            <PaginationEllipsis />
+                          </PaginationItem>
+                        );
+                      }
+                      return null;
+                    })}
+                    
+                    <PaginationItem>
+                      <PaginationNext 
+                        onClick={goToNext}
+                        className={currentPage === totalPages ? "pointer-events-none opacity-50" : "cursor-pointer"}
+                      />
+                    </PaginationItem>
+                  </PaginationContent>
+                </Pagination>
+              </div>
+            )}
 
             {/* No results message */}
             {searchQuery && filteredClients.length === 0 && (

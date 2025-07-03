@@ -83,7 +83,7 @@ const Reports = () => {
                             }}
                           />
                           <span className="text-sm font-medium min-w-[80px] text-right">
-                            {month.revenue.toLocaleString('fr-FR')} €
+                            {month.revenue.toLocaleString('fr-FR')} FCFA
                           </span>
                         </div>
                       </div>
@@ -161,7 +161,7 @@ const Reports = () => {
                           <p className="text-sm text-gray-600">#{index + 1}</p>
                         </div>
                         <div className="text-right">
-                          <p className="font-medium">{client.revenue.toFixed(0)} €</p>
+                          <p className="font-medium">{client.revenue.toFixed(0)} FCFA</p>
                         </div>
                       </div>
                     )) : (
@@ -213,11 +213,11 @@ const Reports = () => {
                     </div>
                     <div>
                       <p className="text-sm text-gray-600">Panier moyen</p>
-                      <p className="text-2xl font-bold">{stats.averageBasket.toFixed(0)} €</p>
+                      <p className="text-2xl font-bold">{stats.averageBasket.toFixed(0)} FCFA</p>
                     </div>
                     <div>
                       <p className="text-sm text-gray-600">Créances en retard</p>
-                      <p className="text-2xl font-bold text-red-600">{stats.overdueAmount.toFixed(0)} €</p>
+                      <p className="text-2xl font-bold text-red-600">{stats.overdueAmount.toFixed(0)} FCFA</p>
                     </div>
                   </div>
                 </CardContent>

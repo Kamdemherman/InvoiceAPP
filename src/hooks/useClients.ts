@@ -1,6 +1,7 @@
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { clientsAPI } from '@/services/api';
+import { useInvoices } from '@/hooks/useInvoices';
 import { toast } from 'sonner';
 
 export const useClients = () => {
@@ -8,6 +9,39 @@ export const useClients = () => {
     queryKey: ['clients'],
     queryFn: clientsAPI.getAll,
   });
+};
+
+export const useClientsWithStats = () => {
+  const { data: clients = [] } = useClients();
+  const { data: invoices = [] } = useInvoices();
+
+  const clientsWithStats = clients.map(client => {
+    const clientInvoices = invoices.filter(invoice => 
+      invoice.client === client._id || invoice.clientName === client.name
+    );
+    
+    const totalInvoices = clientInvoices.length;
+    const totalAmount = clientInvoices
+      .filter(invoice => invoice.status === 'paid')
+      .reduce((sum, invoice) => sum + invoice.total, 0);
+    
+    const pendingAmount = clientInvoices
+      .filter(invoice => invoice.status === 'sent' || invoice.status === 'overdue')
+      .reduce((sum, invoice) => sum + invoice.total, 0);
+
+    return {
+      ...client,
+      totalInvoices,
+      totalAmount,
+      pendingAmount
+    };
+  });
+
+  return { 
+    data: clientsWithStats, 
+    isLoading: false, 
+    error: null 
+  };
 };
 
 export const useClient = (id: string) => {

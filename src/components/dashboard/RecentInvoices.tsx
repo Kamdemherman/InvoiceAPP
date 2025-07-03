@@ -79,7 +79,7 @@ export function RecentInvoices({ invoices, onViewInvoice }: RecentInvoicesProps)
                   </div>
                   <div className="text-right">
                     <p className="font-medium text-gray-900">
-                      {invoice.total.toFixed(2)} €
+                      {invoice.total.toFixed(2)} FCFA
                     </p>
                     <p className="text-sm text-gray-500">
                       {formatDate(invoice.date)}

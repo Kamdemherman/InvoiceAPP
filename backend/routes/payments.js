@@ -1,7 +1,7 @@
-
 const express = require('express');
 const router = express.Router();
 const Payment = require('../models/Payment');
+const Invoice = require('../models/Invoice');
 
 // GET /api/payments - Get all payments
 router.get('/', async (req, res) => {
@@ -35,6 +35,18 @@ router.post('/', async (req, res) => {
     const payment = new Payment(req.body);
     const savedPayment = await payment.save();
     await savedPayment.populate('invoice', 'number clientName total');
+    
+    // Marquer automatiquement la facture comme payée si le paiement est complet
+    if (savedPayment.status === 'completed' && savedPayment.invoice) {
+      const invoice = await Invoice.findById(savedPayment.invoiceId);
+      if (invoice && savedPayment.amount >= invoice.total) {
+        invoice.status = 'paid';
+        invoice.paymentDate = savedPayment.date;
+        await invoice.save();
+        console.log(`Facture ${invoice.number} automatiquement marquée comme payée`);
+      }
+    }
+    
     res.status(201).json(savedPayment);
   } catch (error) {
     res.status(400).json({ message: error.message });
@@ -53,6 +65,18 @@ router.put('/:id', async (req, res) => {
     if (!payment) {
       return res.status(404).json({ message: 'Payment not found' });
     }
+
+    // Vérifier si la facture doit être marquée comme payée
+    if (payment.status === 'completed' && payment.invoice) {
+      const invoice = await Invoice.findById(payment.invoiceId);
+      if (invoice && payment.amount >= invoice.total) {
+        invoice.status = 'paid';
+        invoice.paymentDate = payment.date;
+        await invoice.save();
+        console.log(`Facture ${invoice.number} automatiquement marquée comme payée`);
+      }
+    }
+    
     res.json(payment);
   } catch (error) {
     res.status(400).json({ message: error.message });

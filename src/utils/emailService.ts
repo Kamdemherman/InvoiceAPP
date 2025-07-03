@@ -27,7 +27,7 @@ export const sendInvoiceByEmail = async (invoice: Invoice, client: Client): Prom
           
           <p>Bonjour ${client.name},</p>
           
-          <p>Veuillez trouver ci-joint votre facture <strong>${invoice.number}</strong> d'un montant de <strong>${invoice.total.toFixed(2)} ${companySettings.currency === 'EUR' ? '€' : companySettings.currency}</strong>.</p>
+          <p>Veuillez trouver ci-joint votre facture <strong>${invoice.number}</strong> d'un montant de <strong>${invoice.total.toFixed(2)} ${companySettings.currency === 'EUR' ? 'FCFA' : companySettings.currency}</strong>.</p>
           
           <div style="background-color: #f5f5f5; padding: 20px; border-radius: 5px; margin: 20px 0;">
             <h3 style="margin-top: 0;">Détails de la facture:</h3>
@@ -35,7 +35,7 @@ export const sendInvoiceByEmail = async (invoice: Invoice, client: Client): Prom
               <li><strong>Numéro:</strong> ${invoice.number}</li>
               <li><strong>Date:</strong> ${new Date(invoice.date).toLocaleDateString('fr-FR')}</li>
               <li><strong>Date d'échéance:</strong> ${new Date(invoice.dueDate).toLocaleDateString('fr-FR')}</li>
-              <li><strong>Montant total:</strong> ${invoice.total.toFixed(2)} ${companySettings.currency === 'EUR' ? '€' : companySettings.currency} TTC</li>
+              <li><strong>Montant total:</strong> ${invoice.total.toFixed(2)} ${companySettings.currency === 'FCFA' ? 'FCFA' : companySettings.currency} TTC</li>
             </ul>
           </div>
           
@@ -54,18 +54,18 @@ export const sendInvoiceByEmail = async (invoice: Invoice, client: Client): Prom
                 <tr>
                   <td style="border: 1px solid #ddd; padding: 8px;">${item.productName}</td>
                   <td style="border: 1px solid #ddd; padding: 8px; text-align: center;">${item.quantity}</td>
-                  <td style="border: 1px solid #ddd; padding: 8px; text-align: right;">${item.unitPrice.toFixed(2)} ${companySettings.currency === 'EUR' ? '€' : companySettings.currency}</td>
-                  <td style="border: 1px solid #ddd; padding: 8px; text-align: right;">${item.total.toFixed(2)} ${companySettings.currency === 'EUR' ? '€' : companySettings.currency}</td>
+                  <td style="border: 1px solid #ddd; padding: 8px; text-align: right;">${item.unitPrice.toFixed(2)} ${companySettings.currency === 'FCFA' ? 'FCFA' : companySettings.currency}</td>
+                  <td style="border: 1px solid #ddd; padding: 8px; text-align: right;">${item.total.toFixed(2)} ${companySettings.currency === 'FCFA' ? 'FCFA' : companySettings.currency}</td>
                 </tr>
               `).join('')}
             </tbody>
           </table>
           
           <div style="text-align: right; margin: 20px 0;">
-            <div>Sous-total: ${invoice.subtotal.toFixed(2)} ${companySettings.currency === 'EUR' ? '€' : companySettings.currency}</div>
-            <div>TVA (${companySettings.defaultVatRate}%): ${invoice.tax.toFixed(2)} ${companySettings.currency === 'EUR' ? '€' : companySettings.currency}</div>
+            <div>Sous-total: ${invoice.subtotal.toFixed(2)} ${companySettings.currency === 'FCFA' ? 'FCFA' : companySettings.currency}</div>
+            <div>TVA (${companySettings.defaultVatRate}%): ${invoice.tax.toFixed(2)} ${companySettings.currency === 'FCFA' ? 'FCFA' : companySettings.currency}</div>
             <div style="font-size: 1.2em; font-weight: bold; margin-top: 10px;">
-              Total: ${invoice.total.toFixed(2)} ${companySettings.currency === 'EUR' ? '€' : companySettings.currency}
+              Total: ${invoice.total.toFixed(2)} ${companySettings.currency === 'FCFA' ? 'FCFA' : companySettings.currency}
             </div>
           </div>
           

@@ -83,7 +83,7 @@ export const ViewClientModal = ({ open, onOpenChange, client, onEdit }: ViewClie
                   <div>
                     <p className="text-sm text-gray-600">CA Total</p>
                     <p className="text-xl font-bold text-green-600">
-                      {(client.totalAmount || 0).toLocaleString('fr-FR')} €
+                      {(client.totalAmount || 0).toLocaleString('fr-FR')} FCFA
                     </p>
                   </div>
                 </div>

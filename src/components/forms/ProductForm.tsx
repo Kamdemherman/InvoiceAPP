@@ -53,7 +53,7 @@ export const ProductForm = ({ open, onOpenChange, product, onSubmit }: ProductFo
             </div>
             
             <div>
-              <Label htmlFor="price">Prix (€)</Label>
+              <Label htmlFor="price">Prix (FCFA)</Label>
               <Input
                 id="price"
                 type="number"

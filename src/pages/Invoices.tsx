@@ -4,6 +4,15 @@ import { AppSidebar } from "@/components/layout/AppSidebar";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { 
+  Pagination,
+  PaginationContent,
+  PaginationItem,
+  PaginationLink,
+  PaginationNext,
+  PaginationPrevious,
+  PaginationEllipsis
+} from "@/components/ui/pagination";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -26,7 +35,8 @@ import {
   CheckCircle,
   Clock,
   AlertCircle,
-  FileEdit
+  FileEdit,
+  Bell
 } from "lucide-react";
 import { InvoiceForm } from "@/components/forms/InvoiceForm";
 import { ViewInvoiceModal } from "@/components/modals/ViewInvoiceModal";
@@ -34,6 +44,7 @@ import { DeleteConfirmModal } from "@/components/modals/DeleteConfirmModal";
 import { Invoice } from "@/types";
 import { useInvoices, useCreateInvoice, useUpdateInvoice, useDeleteInvoice } from "@/hooks/useInvoices";
 import { useClients } from "@/hooks/useClients";
+import { usePagination } from "@/hooks/usePagination";
 import { generateInvoicePDF } from "@/utils/pdfGenerator";
 import { sendInvoiceByEmail } from "@/utils/emailService";
 import { toast } from "sonner";
@@ -50,6 +61,32 @@ const Invoices = () => {
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [selectedInvoice, setSelectedInvoice] = useState<Invoice | null>(null);
   const [editingInvoice, setEditingInvoice] = useState<Invoice | null>(null);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [statusFilter, setStatusFilter] = useState<string>("all");
+
+  // Filter invoices based on search and status
+  const filteredInvoices = invoices.filter(invoice => {
+    const matchesSearch = !searchQuery || 
+      invoice.number.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      invoice.clientName.toLowerCase().includes(searchQuery.toLowerCase());
+    
+    const matchesStatus = statusFilter === "all" || invoice.status === statusFilter;
+    
+    return matchesSearch && matchesStatus;
+  });
+
+  // Pagination - explicitly type the hook call
+  const {
+    currentPage,
+    totalPages,
+    paginatedData: paginatedInvoices,
+    goToPage,
+    goToPrevious,
+    goToNext,
+    totalItems,
+    startIndex,
+    endIndex
+  } = usePagination<Invoice>(filteredInvoices, 10);
 
   // Fonction utilitaire pour convertir les dates
   const formatDate = (dateValue: string | Date) => {
@@ -110,7 +147,6 @@ const Invoices = () => {
     }
   };
 
-  // Nouvelle fonction pour changer le statut
   const handleStatusChange = async (invoice: Invoice, newStatus: string) => {
     try {
       console.log(`Changing status of invoice ${invoice.number} to ${newStatus}`);
@@ -153,11 +189,9 @@ const Invoices = () => {
       console.log('Attempting to generate PDF for invoice:', invoice._id);
       console.log('Available clients:', clients.length);
       
-      // Chercher le client par ID ou par nom
       let client = clients.find(c => c._id === invoice.client);
       
       if (!client) {
-        // Si pas trouvé par ID, chercher par nom
         client = clients.find(c => c.name === invoice.clientName);
       }
       
@@ -180,11 +214,9 @@ const Invoices = () => {
       console.log('Attempting to send email for invoice:', invoice._id);
       console.log('Available clients:', clients.length);
       
-      // Chercher le client par ID ou par nom
       let client = clients.find(c => c._id === invoice.client);
       
       if (!client) {
-        // Si pas trouvé par ID, chercher par nom
         client = clients.find(c => c.name === invoice.clientName);
       }
       
@@ -197,7 +229,6 @@ const Invoices = () => {
       await sendInvoiceByEmail(invoice, client);
       toast.success(`Email envoyé à ${client.email}`);
       
-      // Mettre à jour le statut à "envoyée" après l'envoi
       if (invoice.status === 'draft') {
         await handleStatusChange(invoice, 'sent');
       }
@@ -242,10 +273,20 @@ const Invoices = () => {
                   <p className="text-gray-600">Gérez toutes vos factures</p>
                 </div>
               </div>
-              <Button onClick={handleCreateInvoice} className="bg-primary-600 hover:bg-primary-700 text-white">
-                <Plus className="w-4 h-4 mr-2" />
-                Nouvelle Facture
-              </Button>
+              <div className="flex items-center space-x-3">
+                <Button 
+                  onClick={() => window.location.href = '/reminders'} 
+                  variant="outline"
+                  className="border-orange-200 hover:bg-orange-50 text-orange-700"
+                >
+                  <Bell className="w-4 h-4 mr-2" />
+                  Relances Client
+                </Button>
+                <Button onClick={handleCreateInvoice} className="bg-primary-600 hover:bg-primary-700 text-white">
+                  <Plus className="w-4 h-4 mr-2" />
+                  Nouvelle Facture
+                </Button>
+              </div>
             </div>
 
             {/* Stats Cards */}
@@ -317,19 +358,45 @@ const Invoices = () => {
                       type="text"
                       placeholder="Rechercher une facture..."
                       className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
                     />
                   </div>
-                  <Button variant="outline">Toutes</Button>
-                  <Button variant="outline">Payées</Button>
-                  <Button variant="outline">En attente</Button>
-                  <Button variant="outline">En retard</Button>
+                  <Button 
+                    variant={statusFilter === "all" ? "default" : "outline"}
+                    onClick={() => setStatusFilter("all")}
+                  >
+                    Toutes
+                  </Button>
+                  <Button 
+                    variant={statusFilter === "paid" ? "default" : "outline"}
+                    onClick={() => setStatusFilter("paid")}
+                  >
+                    Payées
+                  </Button>
+                  <Button 
+                    variant={statusFilter === "sent" ? "default" : "outline"}
+                    onClick={() => setStatusFilter("sent")}
+                  >
+                    En attente
+                  </Button>
+                  <Button 
+                    variant={statusFilter === "overdue" ? "default" : "outline"}
+                    onClick={() => setStatusFilter("overdue")}
+                  >
+                    En retard
+                  </Button>
+                </div>
+                <div className="mt-4 text-sm text-gray-500">
+                  {searchQuery && `${filteredInvoices.length} résultat(s) trouvé(s) - `}
+                  Affichage de {startIndex} à {endIndex} sur {totalItems} factures
                 </div>
               </CardContent>
             </Card>
 
             {/* Invoices List */}
-            <div className="space-y-4">
-              {invoices.map((invoice) => (
+            <div className="space-y-4 mb-6">
+              {paginatedInvoices.map((invoice) => (
                 <Card key={invoice._id} className="hover:shadow-md transition-shadow">
                   <CardContent className="p-6">
                     <div className="flex items-center justify-between">
@@ -359,7 +426,7 @@ const Invoices = () => {
                             <div className="text-right">
                               <div className="flex items-center text-xl font-bold text-gray-900">
                                 <Euro className="w-5 h-5 mr-1" />
-                                {invoice.total.toFixed(2)} €
+                                {invoice.total.toFixed(2)} FCFA
                               </div>
                               <div className="text-sm text-gray-500">
                                 TTC
@@ -386,8 +453,7 @@ const Invoices = () => {
                           Envoyer
                         </Button>
                         
-                        {/* Dropdown Menu pour les actions rapides */}
-                        <DropdownMenu>
+                        {/* <DropdownMenu>
                           <DropdownMenuTrigger asChild>
                             <Button size="sm" variant="outline">
                               <MoreVertical className="w-4 h-4" />
@@ -411,7 +477,7 @@ const Invoices = () => {
                               Marquer comme brouillon
                             </DropdownMenuItem>
                           </DropdownMenuContent>
-                        </DropdownMenu>
+                        </DropdownMenu> */}
                         
                         <Button size="sm" variant="outline" onClick={() => handleDeleteInvoice(invoice)}>
                           <Trash2 className="w-4 h-4 mr-1" />
@@ -420,7 +486,6 @@ const Invoices = () => {
                       </div>
                     </div>
                     
-                    {/* Invoice Items Summary */}
                     <div className="mt-4 pt-4 border-t border-gray-100">
                       <div className="text-sm text-gray-600">
                         <span className="font-medium">{invoice.items.length} article(s)</span>
@@ -436,6 +501,68 @@ const Invoices = () => {
                 </Card>
               ))}
             </div>
+
+            {/* Pagination */}
+            {totalPages > 1 && (
+              <div className="flex justify-center mb-8">
+                <Pagination>
+                  <PaginationContent>
+                    <PaginationItem>
+                      <PaginationPrevious 
+                        onClick={goToPrevious}
+                        className={currentPage === 1 ? "pointer-events-none opacity-50" : "cursor-pointer"}
+                      />
+                    </PaginationItem>
+                    
+                    {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => {
+                      if (
+                        page === 1 ||
+                        page === totalPages ||
+                        (page >= currentPage - 1 && page <= currentPage + 1)
+                      ) {
+                        return (
+                          <PaginationItem key={page}>
+                            <PaginationLink
+                              onClick={() => goToPage(page)}
+                              isActive={currentPage === page}
+                              className="cursor-pointer"
+                            >
+                              {page}
+                            </PaginationLink>
+                          </PaginationItem>
+                        );
+                      } else if (
+                        page === currentPage - 2 ||
+                        page === currentPage + 2
+                      ) {
+                        return (
+                          <PaginationItem key={page}>
+                            <PaginationEllipsis />
+                          </PaginationItem>
+                        );
+                      }
+                      return null;
+                    })}
+                    
+                    <PaginationItem>
+                      <PaginationNext 
+                        onClick={goToNext}
+                        className={currentPage === totalPages ? "pointer-events-none opacity-50" : "cursor-pointer"}
+                      />
+                    </PaginationItem>
+                  </PaginationContent>
+                </Pagination>
+              </div>
+            )}
+
+            {/* No results message */}
+            {searchQuery && filteredInvoices.length === 0 && (
+              <div className="text-center py-12">
+                <FileText className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+                <h3 className="text-lg font-medium text-gray-900 mb-2">Aucune facture trouvée</h3>
+                <p className="text-gray-500">Essayez de modifier vos critères de recherche</p>
+              </div>
+            )}
           </div>
         </main>
 

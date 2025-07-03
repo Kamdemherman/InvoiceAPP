@@ -6,6 +6,15 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { SearchInput } from "@/components/ui/search-input";
 import { 
+  Pagination,
+  PaginationContent,
+  PaginationItem,
+  PaginationLink,
+  PaginationNext,
+  PaginationPrevious,
+  PaginationEllipsis
+} from "@/components/ui/pagination";
+import { 
   CreditCard, 
   Plus, 
   Euro, 
@@ -22,6 +31,7 @@ import { Payment } from "@/types";
 import { usePayments, useCreatePayment, useUpdatePayment, useDeletePayment } from "@/hooks/usePayments";
 import { useInvoices } from "@/hooks/useInvoices";
 import { useSearch } from "@/hooks/useSearch";
+import { usePagination } from "@/hooks/usePagination";
 
 const Payments = () => {
   const { data: payments = [], isLoading } = usePayments();
@@ -61,22 +71,35 @@ const Payments = () => {
     ? filteredPayments 
     : filteredPayments.filter(p => p.method === methodFilter);
 
-  const handleCreatePayment = () => {
+  // Pagination
+  const {
+    currentPage,
+    totalPages,
+    paginatedData: paginatedPayments,
+    goToPage,
+    goToPrevious,
+    goToNext,
+    totalItems,
+    startIndex,
+    endIndex
+  } = usePagination(methodFilteredPayments, 10); // 10 items per page
+
+  function handleCreatePayment() {
     setEditingPayment(null);
     setShowPaymentForm(true);
-  };
+  }
 
-  const handleEditPayment = (payment: Payment) => {
+  function handleEditPayment(payment: Payment) {
     setEditingPayment(payment);
     setShowPaymentForm(true);
-  };
+  }
 
-  const handleDeletePayment = (payment: Payment) => {
+  function handleDeletePayment(payment: Payment) {
     setSelectedPayment(payment);
     setShowDeleteModal(true);
-  };
+  }
 
-  const handleSubmitPayment = async (paymentData: Partial<Payment>) => {
+  async function handleSubmitPayment(paymentData: Partial<Payment>) {
     if (editingPayment) {
       await updatePaymentMutation.mutateAsync({
         id: editingPayment._id,
@@ -86,17 +109,17 @@ const Payments = () => {
       await createPaymentMutation.mutateAsync(paymentData);
     }
     setShowPaymentForm(false);
-  };
+  }
 
-  const confirmDeletePayment = async () => {
+  async function confirmDeletePayment() {
     if (selectedPayment) {
       await deletePaymentMutation.mutateAsync(selectedPayment._id);
       setShowDeleteModal(false);
       setSelectedPayment(null);
     }
-  };
+  }
 
-  const getPaymentMethodIcon = (method: string) => {
+  function getPaymentMethodIcon(method: string) {
     switch (method) {
       case 'card':
         return <CreditCard className="w-4 h-4" />;
@@ -109,9 +132,9 @@ const Payments = () => {
       default:
         return <CreditCard className="w-4 h-4" />;
     }
-  };
+  }
 
-  const getPaymentMethodLabel = (method: string) => {
+  function getPaymentMethodLabel(method: string) {
     switch (method) {
       case 'card':
         return 'Carte bancaire';
@@ -124,7 +147,7 @@ const Payments = () => {
       default:
         return method;
     }
-  };
+  }
 
   if (isLoading) {
     return (
@@ -178,7 +201,7 @@ const Payments = () => {
                     <div className="ml-4">
                       <p className="text-sm font-medium text-gray-600">Total Encaissé</p>
                       <p className="text-2xl font-bold text-gray-900">
-                        {totalPayments.toLocaleString('fr-FR')} €
+                        {totalPayments.toLocaleString('fr-FR')} FCFA
                       </p>
                     </div>
                   </div>
@@ -194,7 +217,7 @@ const Payments = () => {
                     <div className="ml-4">
                       <p className="text-sm font-medium text-gray-600">Ce Mois</p>
                       <p className="text-2xl font-bold text-gray-900">
-                        {paymentsThisMonth.toLocaleString('fr-FR')} €
+                        {paymentsThisMonth.toLocaleString('fr-FR')} FCFA
                       </p>
                     </div>
                   </div>
@@ -224,7 +247,7 @@ const Payments = () => {
                     <div className="ml-4">
                       <p className="text-sm font-medium text-gray-600">Paiement Moyen</p>
                       <p className="text-2xl font-bold text-gray-900">
-                        {payments.length > 0 ? (totalPayments / payments.length).toFixed(0) : 0} €
+                        {payments.length > 0 ? (totalPayments / payments.length).toFixed(0) : 0} FCFA
                       </p>
                     </div>
                   </div>
@@ -235,7 +258,7 @@ const Payments = () => {
             {/* Search and Filters */}
             <Card className="mb-6">
               <CardContent className="p-6">
-                <div className="flex items-center space-x-4">
+                <div className="flex items-center space-x-4 mb-4">
                   <SearchInput
                     placeholder="Rechercher un paiement (ID, montant, méthode, référence, facture)..."
                     onSearch={setSearchQuery}
@@ -266,17 +289,16 @@ const Payments = () => {
                     Espèces
                   </Button>
                 </div>
-                {(searchQuery || methodFilter !== 'all') && (
-                  <div className="mt-2 text-sm text-gray-500">
-                    {methodFilteredPayments.length} résultat(s) trouvé(s)
-                  </div>
-                )}
+                <div className="text-sm text-gray-500">
+                  {(searchQuery || methodFilter !== 'all') && `${methodFilteredPayments.length} résultat(s) trouvé(s) - `}
+                  Affichage de {startIndex} à {endIndex} sur {totalItems} paiements
+                </div>
               </CardContent>
             </Card>
 
             {/* Payments List */}
-            <div className="space-y-4">
-              {methodFilteredPayments.map((payment) => {
+            <div className="space-y-4 mb-6">
+              {paginatedPayments.map((payment) => {
                 const invoice = invoices.find(inv => inv._id === payment.invoiceId);
                 return (
                   <Card key={payment._id} className="hover:shadow-md transition-shadow">
@@ -317,7 +339,7 @@ const Payments = () => {
                           <div className="text-right">
                             <div className="flex items-center text-xl font-bold text-green-600">
                               <Euro className="w-5 h-5 mr-1" />
-                              {payment.amount.toFixed(2)} €
+                              {payment.amount.toFixed(2)} FCFA
                             </div>
                             <div className="text-sm text-gray-500">
                               {invoice ? invoice.clientName : 'Client inconnu'}
@@ -341,6 +363,59 @@ const Payments = () => {
                 );
               })}
             </div>
+
+            {/* Pagination */}
+            {totalPages > 1 && (
+              <div className="flex justify-center mb-6">
+                <Pagination>
+                  <PaginationContent>
+                    <PaginationItem>
+                      <PaginationPrevious 
+                        onClick={goToPrevious}
+                        className={currentPage === 1 ? "pointer-events-none opacity-50" : "cursor-pointer"}
+                      />
+                    </PaginationItem>
+                    
+                    {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => {
+                      if (
+                        page === 1 ||
+                        page === totalPages ||
+                        (page >= currentPage - 1 && page <= currentPage + 1)
+                      ) {
+                        return (
+                          <PaginationItem key={page}>
+                            <PaginationLink
+                              onClick={() => goToPage(page)}
+                              isActive={currentPage === page}
+                              className="cursor-pointer"
+                            >
+                              {page}
+                            </PaginationLink>
+                          </PaginationItem>
+                        );
+                      } else if (
+                        page === currentPage - 2 ||
+                        page === currentPage + 2
+                      ) {
+                        return (
+                          <PaginationItem key={page}>
+                            <PaginationEllipsis />
+                          </PaginationItem>
+                        );
+                      }
+                      return null;
+                    })}
+                    
+                    <PaginationItem>
+                      <PaginationNext 
+                        onClick={goToNext}
+                        className={currentPage === totalPages ? "pointer-events-none opacity-50" : "cursor-pointer"}
+                      />
+                    </PaginationItem>
+                  </PaginationContent>
+                </Pagination>
+              </div>
+            )}
 
             {/* No results message */}
             {(searchQuery || methodFilter !== 'all') && methodFilteredPayments.length === 0 && (

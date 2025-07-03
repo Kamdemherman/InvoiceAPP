@@ -1,6 +1,7 @@
 
 const express = require('express');
 const router = express.Router();
+const Reminder = require('../models/Reminder');
 
 // Route pour envoyer un email (simulation)
 router.post('/send-email', async (req, res) => {
@@ -36,5 +37,39 @@ router.post('/send-email', async (req, res) => {
     res.status(500).json({ message: 'Erreur lors de l\'envoi de l\'email' });
   }
 });
+
+// Route pour envoyer les relances automatiquement
+router.post('/send-reminders', async (req, res) => {
+    try {
+      console.log('🔄 Démarrage de l\'envoi des relances automatiques...');
+      
+      // Envoyer les relances pour les factures en retard
+      const overdueResponse = await fetch(`${req.protocol}://${req.get('host')}/api/reminders/send-overdue`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' }
+      });
+      const overdueResult = await overdueResponse.json();
+      
+      // Envoyer les relances hebdomadaires programmées
+      const weeklyResponse = await fetch(`${req.protocol}://${req.get('host')}/api/reminders/send-weekly`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' }
+      });
+      const weeklyResult = await weeklyResponse.json();
+      
+      console.log('✅ Relances automatiques terminées');
+      
+      res.json({
+        message: 'Relances automatiques envoyées',
+        overdue: overdueResult,
+        weekly: weeklyResult,
+        timestamp: new Date().toISOString()
+      });
+    } catch (error) {
+      console.error('Erreur lors de l\'envoi des relances automatiques:', error);
+      res.status(500).json({ message: 'Erreur lors de l\'envoi des relances automatiques' });
+    }
+  });
+  
 
 module.exports = router;

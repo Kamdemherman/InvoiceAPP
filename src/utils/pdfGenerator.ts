@@ -69,17 +69,17 @@ export const generateInvoicePDF = async (invoice: Invoice, client: Client): Prom
               <tr>
                 <td>${item.productName}</td>
                 <td>${item.quantity}</td>
-                <td>${item.unitPrice.toFixed(2)} ${companySettings.currency === 'EUR' ? '€' : companySettings.currency}</td>
-                <td>${item.total.toFixed(2)} ${companySettings.currency === 'EUR' ? '€' : companySettings.currency}</td>
+                <td>${item.unitPrice.toFixed(2)} ${companySettings.currency === 'FCFA' ? 'FCFA' : companySettings.currency}</td>
+                <td>${item.total.toFixed(2)} ${companySettings.currency === 'FCFA' ? 'FCFA' : companySettings.currency}</td>
               </tr>
             `).join('')}
           </tbody>
         </table>
 
         <div class="totals">
-          <div class="total-line">Sous-total: ${invoice.subtotal.toFixed(2)} ${companySettings.currency === 'EUR' ? '€' : companySettings.currency}</div>
-          <div class="total-line">TVA (${companySettings.defaultVatRate}%): ${invoice.tax.toFixed(2)} ${companySettings.currency === 'EUR' ? '€' : companySettings.currency}</div>
-          <div class="total-line total-final">Total: ${invoice.total.toFixed(2)} ${companySettings.currency === 'EUR' ? '€' : companySettings.currency}</div>
+          <div class="total-line">Sous-total: ${invoice.subtotal.toFixed(2)} ${companySettings.currency === 'FCFA' ? 'FCFA' : companySettings.currency}</div>
+          <div class="total-line">TVA (${companySettings.defaultVatRate}%): ${invoice.tax.toFixed(2)} ${companySettings.currency === 'FCFA' ? 'FCFA' : companySettings.currency}</div>
+          <div class="total-line total-final">Total: ${invoice.total.toFixed(2)} ${companySettings.currency === 'FCFA' ? 'FCFA' : companySettings.currency}</div>
         </div>
 
         ${invoice.notes ? `

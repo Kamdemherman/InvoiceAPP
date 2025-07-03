@@ -100,8 +100,8 @@ export const ViewInvoiceModal = ({ open, onOpenChange, invoice }: ViewInvoiceMod
                     <tr key={index} className="border-b border-gray-100">
                       <td className="py-3 px-3">{item.productName}</td>
                       <td className="text-right py-3 px-3">{item.quantity}</td>
-                      <td className="text-right py-3 px-3">{item.unitPrice.toFixed(2)} €</td>
-                      <td className="text-right py-3 px-3 font-medium">{item.total.toFixed(2)} €</td>
+                      <td className="text-right py-3 px-3">{item.unitPrice.toFixed(2)} FCFA</td>
+                      <td className="text-right py-3 px-3 font-medium">{item.total.toFixed(2)} FCFA</td>
                     </tr>
                   ))}
                 </tbody>
@@ -116,18 +116,18 @@ export const ViewInvoiceModal = ({ open, onOpenChange, invoice }: ViewInvoiceMod
             <div className="w-64 space-y-2">
               <div className="flex justify-between">
                 <span>Sous-total:</span>
-                <span>{invoice.subtotal.toFixed(2)} €</span>
+                <span>{invoice.subtotal.toFixed(2)} FCFA</span>
               </div>
               <div className="flex justify-between">
-                <span>TVA (20%):</span>
-                <span>{invoice.tax.toFixed(2)} €</span>
+                <span>TVA:</span>
+                <span>{invoice.tax.toFixed(2)} FCFA</span>
               </div>
               <Separator />
               <div className="flex justify-between text-lg font-bold">
                 <span>Total:</span>
                 <span className="flex items-center">
                   <Euro className="w-4 h-4 mr-1" />
-                  {invoice.total.toFixed(2)} €
+                  {invoice.total.toFixed(2)} FCFA
                 </span>
               </div>
             </div>

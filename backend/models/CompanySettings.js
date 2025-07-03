@@ -38,7 +38,7 @@ const companySettingsSchema = new mongoose.Schema({
   },
   currency: {
     type: String,
-    default: 'EUR',
+    default: 'FCFA',
     trim: true
   },
   legalMentions: {
