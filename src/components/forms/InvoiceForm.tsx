@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -8,7 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Trash2, Calculator } from "lucide-react";
+import { Plus, Trash2, Calculator, FileText, Receipt } from "lucide-react";
 import { Invoice, InvoiceItem, Client, Product } from "@/types";
 import { useClients } from "@/hooks/useClients";
 import { useProducts } from "@/hooks/useProducts";
@@ -27,6 +26,7 @@ export const InvoiceForm = ({ open, onOpenChange, invoice, onSubmit }: InvoiceFo
   const { data: companySettings } = useCompanySettings();
   
   const [formData, setFormData] = useState({
+    type: invoice?.type || 'final',
     client: invoice?.client || '',
     clientName: invoice?.clientName || '',
     date: invoice?.date ? new Date(invoice.date).toISOString().split('T')[0] : new Date().toISOString().split('T')[0],
@@ -49,6 +49,7 @@ export const InvoiceForm = ({ open, onOpenChange, invoice, onSubmit }: InvoiceFo
   useEffect(() => {
     if (invoice) {
       setFormData({
+        type: invoice.type || 'final',
         client: invoice.client || '',
         clientName: invoice.clientName || '',
         date: new Date(invoice.date).toISOString().split('T')[0],
@@ -68,6 +69,7 @@ export const InvoiceForm = ({ open, onOpenChange, invoice, onSubmit }: InvoiceFo
       dueDate.setDate(dueDate.getDate() + paymentDelay);
       
       setFormData({
+        type: 'final',
         client: '',
         clientName: '',
         date: new Date().toISOString().split('T')[0],
@@ -161,12 +163,55 @@ export const InvoiceForm = ({ open, onOpenChange, invoice, onSubmit }: InvoiceFo
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>
-            {invoice ? 'Modifier la facture' : 'Créer une nouvelle facture'}
+          <DialogTitle className="flex items-center">
+            {formData.type === 'proforma' ? (
+              <>
+                <FileText className="w-5 h-5 mr-2 text-blue-600" />
+                {invoice ? 'Modifier la pro-forma' : 'Créer une nouvelle pro-forma'}
+              </>
+            ) : (
+              <>
+                <Receipt className="w-5 h-5 mr-2 text-green-600" />
+                {invoice ? 'Modifier la facture' : 'Créer une nouvelle facture'}
+              </>
+            )}
           </DialogTitle>
         </DialogHeader>
         
         <form onSubmit={handleSubmit} className="space-y-6">
+          {/* Type de document */}
+          <div>
+            <Label htmlFor="type">Type de document</Label>
+            <Select 
+              value={formData.type} 
+              onValueChange={(value: 'proforma' | 'final') => setFormData(prev => ({ ...prev, type: value }))}
+              disabled={!!invoice} // Désactiver si on modifie une facture existante
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Sélectionner le type" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="proforma">
+                  <div className="flex items-center">
+                    <FileText className="w-4 h-4 mr-2 text-blue-600" />
+                    Pro-forma (Devis)
+                  </div>
+                </SelectItem>
+                <SelectItem value="final">
+                  <div className="flex items-center">
+                    <Receipt className="w-4 h-4 mr-2 text-green-600" />
+                    Facture finale
+                  </div>
+                </SelectItem>
+              </SelectContent>
+            </Select>
+            {formData.type === 'proforma' && (
+              <p className="text-sm text-gray-500 mt-1">
+                Une pro-forma peut être convertie en facture finale après validation du client
+              </p>
+            )}
+          </div>
+
           {/* Client et dates */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div>
@@ -186,7 +231,9 @@ export const InvoiceForm = ({ open, onOpenChange, invoice, onSubmit }: InvoiceFo
             </div>
             
             <div>
-              <Label htmlFor="date">Date de facture</Label>
+              <Label htmlFor="date">
+                Date {formData.type === 'proforma' ? 'de pro-forma' : 'de facture'}
+              </Label>
               <Input
                 id="date"
                 type="date"
@@ -197,7 +244,9 @@ export const InvoiceForm = ({ open, onOpenChange, invoice, onSubmit }: InvoiceFo
             </div>
             
             <div>
-              <Label htmlFor="dueDate">Date d'échéance</Label>
+              <Label htmlFor="dueDate">
+                Date {formData.type === 'proforma' ? 'de validité' : 'd\'échéance'}
+              </Label>
               <Input
                 id="dueDate"
                 type="date"
@@ -269,7 +318,7 @@ export const InvoiceForm = ({ open, onOpenChange, invoice, onSubmit }: InvoiceFo
                     <div>
                       <Label>Total (€)</Label>
                       <div className="h-10 flex items-center px-3 border rounded-md bg-gray-50">
-                        {item.total.toFixed(2)} €
+                        {item.total.toFixed(2)} 
                       </div>
                     </div>
                     
@@ -325,7 +374,7 @@ export const InvoiceForm = ({ open, onOpenChange, invoice, onSubmit }: InvoiceFo
               rows={3}
               value={formData.notes}
               onChange={(e) => setFormData(prev => ({ ...prev, notes: e.target.value }))}
-              placeholder="Notes additionnelles pour cette facture..."
+              placeholder={`Notes additionnelles pour cette ${formData.type === 'proforma' ? 'pro-forma' : 'facture'}...`}
             />
           </div>
 
@@ -334,7 +383,7 @@ export const InvoiceForm = ({ open, onOpenChange, invoice, onSubmit }: InvoiceFo
               Annuler
             </Button>
             <Button type="submit">
-              {invoice ? 'Modifier' : 'Créer'} la facture
+              {invoice ? 'Modifier' : 'Créer'} {formData.type === 'proforma' ? 'la pro-forma' : 'la facture'}
             </Button>
           </div>
         </form>

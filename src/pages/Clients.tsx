@@ -320,10 +320,6 @@ const Clients = () => {
                       </div>
                       
                       <div className="flex space-x-2 pt-2">
-                        {/* <Button size="sm" variant="outline" className="flex-1">
-                          <FileText className="w-4 h-4 mr-1" />
-                          Nouvelle Facture
-                        </Button> */}
                       </div>
                     </div>
                   </CardContent>

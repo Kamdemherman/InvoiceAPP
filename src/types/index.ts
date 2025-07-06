@@ -1,4 +1,3 @@
-
 export interface Client {
   _id: string;
   name: string;
@@ -40,6 +39,7 @@ export interface InvoiceItem {
 export interface Invoice {
   _id: string;
   number: string;
+  type: 'proforma' | 'final';
   client: string;
   clientName: string;
   date: Date;
@@ -51,6 +51,8 @@ export interface Invoice {
   status: 'draft' | 'sent' | 'paid' | 'overdue';
   paymentDate?: Date;
   notes?: string;
+  convertedToFinal?: boolean;
+  finalInvoiceId?: string;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -93,4 +95,3 @@ export interface DashboardStats {
   overdueAmount: number;
   recentInvoices: Invoice[];
 }
-

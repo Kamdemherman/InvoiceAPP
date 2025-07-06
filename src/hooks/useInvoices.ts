@@ -25,7 +25,8 @@ export const useCreateInvoice = () => {
     onSuccess: (data) => {
       console.log('Invoice created successfully:', data);
       queryClient.invalidateQueries({ queryKey: ['invoices'] });
-      toast.success('Facture créée avec succès');
+      const type = data.type === 'proforma' ? 'Pro-forma' : 'Facture';
+      toast.success(`${type} créée avec succès`);
     },
     onError: (error: Error) => {
       console.error('Error creating invoice:', error);
@@ -42,7 +43,8 @@ export const useUpdateInvoice = () => {
     onSuccess: (data) => {
       console.log('Invoice updated successfully:', data);
       queryClient.invalidateQueries({ queryKey: ['invoices'] });
-      toast.success('Facture modifiée avec succès');
+      const type = data.type === 'proforma' ? 'Pro-forma' : 'Facture';
+      toast.success(`${type} modifiée avec succès`);
     },
     onError: (error: Error) => {
       console.error('Error updating invoice:', error);
@@ -64,6 +66,25 @@ export const useDeleteInvoice = () => {
     onError: (error: Error) => {
       console.error('Error deleting invoice:', error);
       toast.error(error.message || 'Erreur lors de la suppression de la facture');
+    },
+  });
+};
+
+export const useConvertToFinalInvoice = () => {
+  const queryClient = useQueryClient();
+  
+  return useMutation({
+    mutationFn: (id: string) => 
+      fetch(`/api/invoices/${id}/convert-to-final`, { method: 'POST' })
+        .then(res => res.json()),
+    onSuccess: (data) => {
+      console.log('Pro-forma converted successfully:', data);
+      queryClient.invalidateQueries({ queryKey: ['invoices'] });
+      toast.success('Pro-forma convertie en facture finale avec succès');
+    },
+    onError: (error: Error) => {
+      console.error('Error converting pro-forma:', error);
+      toast.error(error.message || 'Erreur lors de la conversion');
     },
   });
 };

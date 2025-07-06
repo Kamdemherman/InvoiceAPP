@@ -1,3 +1,4 @@
+
 const mongoose = require('mongoose');
 
 const invoiceItemSchema = new mongoose.Schema({
@@ -33,6 +34,12 @@ const invoiceSchema = new mongoose.Schema({
     type: String,
     unique: true,
     trim: true
+  },
+  type: {
+    type: String,
+    required: true,
+    enum: ['proforma', 'final'],
+    default: 'final'
   },
   client: {
     type: mongoose.Schema.Types.ObjectId,
@@ -82,6 +89,14 @@ const invoiceSchema = new mongoose.Schema({
   notes: {
     type: String,
     trim: true
+  },
+  convertedToFinal: {
+    type: Boolean,
+    default: false
+  },
+  finalInvoiceId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Invoice'
   }
 }, {
   timestamps: true
@@ -93,13 +108,16 @@ invoiceSchema.pre('save', async function(next) {
   if (this.isNew && !this.number) {
     try {
       const year = new Date().getFullYear();
+      const prefix = this.type === 'proforma' ? 'PRO' : 'FAC';
+      
       const count = await this.constructor.countDocuments({
+        type: this.type,
         createdAt: {
           $gte: new Date(year, 0, 1),
           $lt: new Date(year + 1, 0, 1)
         }
       });
-      this.number = `FAC-${year}-${String(count + 1).padStart(3, '0')}`;
+      this.number = `${prefix}-${year}-${String(count + 1).padStart(3, '0')}`;
       console.log('Generated invoice number:', this.number);
     } catch (error) {
       console.error('Error generating invoice number:', error);

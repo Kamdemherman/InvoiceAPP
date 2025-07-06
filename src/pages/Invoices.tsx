@@ -451,34 +451,7 @@ const Invoices = () => {
                         <Button size="sm" variant="outline" onClick={() => handleSendEmail(invoice)}>
                           <Mail className="w-4 h-4 mr-1" />
                           Envoyer
-                        </Button>
-                        
-                        {/* <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <Button size="sm" variant="outline">
-                              <MoreVertical className="w-4 h-4" />
-                            </Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end" className="w-48 bg-white border border-gray-200 shadow-lg z-50">
-                            <DropdownMenuItem onClick={() => handleStatusChange(invoice, 'paid')}>
-                              <CheckCircle className="w-4 h-4 mr-2 text-green-600" />
-                              Marquer comme payée
-                            </DropdownMenuItem>
-                            <DropdownMenuItem onClick={() => handleStatusChange(invoice, 'sent')}>
-                              <Mail className="w-4 h-4 mr-2 text-blue-600" />
-                              Marquer comme envoyée
-                            </DropdownMenuItem>
-                            <DropdownMenuItem onClick={() => handleStatusChange(invoice, 'overdue')}>
-                              <AlertCircle className="w-4 h-4 mr-2 text-red-600" />
-                              Marquer en retard
-                            </DropdownMenuItem>
-                            <DropdownMenuItem onClick={() => handleStatusChange(invoice, 'draft')}>
-                              <FileEdit className="w-4 h-4 mr-2 text-gray-600" />
-                              Marquer comme brouillon
-                            </DropdownMenuItem>
-                          </DropdownMenuContent>
-                        </DropdownMenu> */}
-                        
+                        </Button>    
                         <Button size="sm" variant="outline" onClick={() => handleDeleteInvoice(invoice)}>
                           <Trash2 className="w-4 h-4 mr-1" />
                           Supprimer

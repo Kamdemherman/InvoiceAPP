@@ -1,4 +1,3 @@
-
 import { Client, Product, Invoice, DashboardStats, Payment } from "@/types";
 
 export const mockClients: Client[] = [
@@ -76,6 +75,7 @@ export const mockInvoices: Invoice[] = [
   {
     _id: '1',
     number: 'FAC-2024-001',
+    type: 'final',
     client: '1',
     clientName: 'Entreprise ABC',
     date: new Date('2024-06-15'),
@@ -99,6 +99,7 @@ export const mockInvoices: Invoice[] = [
   {
     _id: '2',
     number: 'FAC-2024-002',
+    type: 'final',
     client: '2',
     clientName: 'Société XYZ',
     date: new Date('2024-06-16'),
@@ -121,7 +122,8 @@ export const mockInvoices: Invoice[] = [
   },
   {
     _id: '3',
-    number: 'FAC-2024-003',
+    number: 'PRO-2024-001',
+    type: 'proforma',
     client: '1',
     clientName: 'Entreprise ABC',
     date: new Date('2024-06-17'),
@@ -138,7 +140,7 @@ export const mockInvoices: Invoice[] = [
     subtotal: 1798.00,
     tax: 359.60,
     total: 2157.60,
-    status: 'overdue',
+    status: 'draft',
     createdAt: new Date('2024-06-17'),
     updatedAt: new Date('2024-06-17')
   }
