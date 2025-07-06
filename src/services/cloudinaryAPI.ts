@@ -1,6 +1,5 @@
 
-const CLOUDINARY_UPLOAD_PRESET = 'invoice_logos'; // Vous devrez créer ce preset dans Cloudinary
-const CLOUDINARY_CLOUD_NAME = 'dh0ymxrfe'; // Remplacez par votre cloud name
+import { CLOUDINARY_CONFIG } from '../config/cloudinary';
 
 export interface CloudinaryUploadResult {
   secure_url: string;
@@ -11,10 +10,10 @@ export const cloudinaryAPI = {
   uploadImage: async (file: File): Promise<CloudinaryUploadResult> => {
     const formData = new FormData();
     formData.append('file', file);
-    formData.append('upload_preset', CLOUDINARY_UPLOAD_PRESET);
+    formData.append('upload_preset', CLOUDINARY_CONFIG.uploadPreset);
     
     const response = await fetch(
-      `https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD_NAME}/image/upload`,
+      `https://api.cloudinary.com/v1_1/${CLOUDINARY_CONFIG.cloudName}/image/upload`,
       {
         method: 'POST',
         body: formData,

@@ -35,3 +35,6 @@ module.exports = async (req, res) => {
   await connectDB();
   return app(req, res);
 };
+
+// Exporter l'app comme handler serverless
+module.exports = app;

@@ -1,7 +1,7 @@
-
 import { cloudinaryAPI } from './cloudinaryAPI';
+import { ENV } from '../config/environment';
 
-const API_BASE_URL = 'http://localhost:5000/api';
+const API_BASE_URL = ENV.API_BASE_URL;
 
 export interface CompanySettings {
   _id?: string;

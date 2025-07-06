@@ -1,7 +1,8 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
+import { ENV } from '../config/environment';
 
-const API_BASE_URL = 'http://localhost:5000/api';
+const API_BASE_URL = ENV.API_BASE_URL;
 
 // Types pour les relances
 export interface Reminder {

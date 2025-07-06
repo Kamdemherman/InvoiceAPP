@@ -1,5 +1,7 @@
 
-const API_BASE_URL = 'http://localhost:5000/api';
+import { ENV } from '../config/environment';
+
+const API_BASE_URL = ENV.API_BASE_URL;
 
 // Generic API functions
 const apiRequest = async (endpoint: string, options: RequestInit = {}) => {
