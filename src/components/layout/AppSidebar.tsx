@@ -69,12 +69,14 @@ export function AppSidebar() {
     <Sidebar className="border-r border-gray-200 bg-white">
       <SidebarHeader className="p-6 border-b border-gray-100">
         <div className="flex items-center space-x-3 mb-4">
-          <div className="w-8 h-8 bg-gradient-to-br from-primary-500 to-primary-700 rounded-lg flex items-center justify-center">
-            <FileText className="w-5 h-5 text-white" />
-          </div>
+           <img 
+        src="/uploads/logos/logo-1751438855821-921058654.png" 
+        alt="Logo Invoice App" 
+        className="w-10 h-10" 
+      />
           <div>
-            <h1 className="text-lg font-bold text-gray-900">Invoice App</h1>
-            <p className="text-sm text-gray-500">Gestion de facturation</p>
+            <h1 className="text-lg font-bold text-gray-900">FacturEZ</h1>
+            <p className="text-sm text-gray-500">Gestion de Facturation</p>
           </div>
         </div>
       </SidebarHeader>
