@@ -1,89 +1,91 @@
-const mongoose = require('mongoose');
-const CompanySettings = require('../models/CompanySettings');
-const UserSettings = require('../models/UserSettings');
+import express from 'express';
+import CompanySettings from '../models/CompanySettings.js';
+import UserSettings from '../models/UserSettings.js';
 
-let cachedDb = null;
+const router = express.Router();
 
-async function connectToDatabase(uri) {
-  if (cachedDb) return cachedDb;
-  const conn = await mongoose.connect(uri, {
-    useNewUrlParser: true,
-    useUnifiedTopology: true
-  });
-  cachedDb = conn;
-  return conn;
-}
-
-module.exports = async (req, res) => {
-  await connectToDatabase(process.env.MONGO_URI);
-
-  const { method, query, body, url } = req;
-
+// Routes pour les paramètres d'entreprise
+router.get('/company', async (req, res) => {
   try {
-    if (method === 'GET') {
-      if (url.includes('/company')) {
-        let companySettings = await CompanySettings.findOne();
-        if (!companySettings) {
-          companySettings = new CompanySettings({
-            companyName: 'Mon Entreprise',
-            address: 'Adresse de l\'entreprise',
-            invoicePrefix: 'FAC',
-            paymentDelay: 30,
-            defaultVatRate: 20,
-            currency: 'FCFA'
-          });
-          await companySettings.save();
-        }
-        return res.status(200).json(companySettings);
-      }
+    let companySettings = await CompanySettings.findOne();
 
-      if (url.includes('/user')) {
-        let userSettings = await UserSettings.findOne();
-        if (!userSettings) {
-          userSettings = new UserSettings({
-            name: 'Utilisateur',
-            email: 'user@example.com',
-            phone: '',
-            position: ''
-          });
-          await userSettings.save();
-        }
-        return res.status(200).json(userSettings);
-      }
-
-      return res.status(404).json({ message: 'Route not found' });
+    // Si aucun paramètre n'existe, créer des paramètres par défaut
+    if (!companySettings) {
+      companySettings = new CompanySettings({
+        companyName: 'Mon Entreprise',
+        address: "Adresse de l'entreprise",
+        invoicePrefix: 'FAC',
+        paymentDelay: 30,
+        defaultVatRate: 20,
+        currency: 'FCFA'
+      });
+      await companySettings.save();
     }
 
-    if (method === 'PUT') {
-      if (url.includes('/company')) {
-        let companySettings = await CompanySettings.findOne();
-        if (!companySettings) {
-          companySettings = new CompanySettings(body);
-        } else {
-          Object.assign(companySettings, body);
-        }
-        const saved = await companySettings.save();
-        return res.status(200).json(saved);
-      }
-
-      if (url.includes('/user')) {
-        let userSettings = await UserSettings.findOne();
-        if (!userSettings) {
-          userSettings = new UserSettings(body);
-        } else {
-          Object.assign(userSettings, body);
-        }
-        const saved = await userSettings.save();
-        return res.status(200).json(saved);
-      }
-
-      return res.status(404).json({ message: 'Route not found' });
-    }
-
-    res.status(405).json({ message: 'Method not allowed' });
-
+    res.json(companySettings);
   } catch (error) {
-    console.error('Erreur settings:', error);
+    console.error("Erreur lors de la récupération des paramètres d'entreprise:", error);
     res.status(500).json({ message: error.message });
   }
-};
+});
+
+router.put('/company', async (req, res) => {
+  try {
+    let companySettings = await CompanySettings.findOne();
+
+    if (!companySettings) {
+      companySettings = new CompanySettings(req.body);
+    } else {
+      Object.assign(companySettings, req.body);
+    }
+
+    const savedSettings = await companySettings.save();
+    res.json(savedSettings);
+  } catch (error) {
+    console.error("Erreur lors de la mise à jour des paramètres d'entreprise:", error);
+    res.status(400).json({ message: error.message });
+  }
+});
+
+// Routes pour les paramètres utilisateur
+router.get('/user', async (req, res) => {
+  try {
+    let userSettings = await UserSettings.findOne();
+
+    // Si aucun paramètre n'existe, créer des paramètres par défaut
+    if (!userSettings) {
+      userSettings = new UserSettings({
+        name: 'Utilisateur',
+        email: 'user@example.com',
+        phone: '',
+        position: ''
+      });
+      await userSettings.save();
+    }
+
+    res.json(userSettings);
+  } catch (error) {
+    console.error("Erreur lors de la récupération des paramètres utilisateur:", error);
+    res.status(500).json({ message: error.message });
+  }
+});
+
+router.put('/user', async (req, res) => {
+  try {
+    let userSettings = await UserSettings.findOne();
+
+    if (!userSettings) {
+      userSettings = new UserSettings(req.body);
+    } else {
+      Object.assign(userSettings, req.body);
+    }
+
+    const savedSettings = await userSettings.save();
+    res.json(savedSettings);
+  } catch (error) {
+    console.error("Erreur lors de la mise à jour des paramètres utilisateur:", error);
+    res.status(400).json({ message: error.message });
+  }
+});
+
+export default router;

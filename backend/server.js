@@ -13,15 +13,15 @@ app.use(express.urlencoded({ extended: true }));
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 // Routes
-app.use('/clients', require('./routes/clients'));
-app.use('/products', require('./routes/products'));
-app.use('/invoices', require('./routes/invoices'));
-app.use('/payments', require('./routes/payments'));
-app.use('/settings', require('./routes/settings'));
-app.use('/reminders', require('./routes/reminders'));
-app.use('', require('./routes/email'));
+app.use('/api/clients', require('./routes/clients'));
+app.use('/api/products', require('./routes/products'));
+app.use('/api/invoices', require('./routes/invoices'));
+app.use('/api/payments', require('./routes/payments'));
+app.use('/api/settings', require('./routes/settings'));
+app.use('/api/reminders', require('./routes/reminders'));
+app.use('/api', require('./routes/email'));
 
-// MongoDB connection
+// MongoDB connection caching pour serverless
 let cachedDb = null;
 async function connectDB() {
   if (cachedDb) return cachedDb;
@@ -33,8 +33,8 @@ async function connectDB() {
   return cachedDb;
 }
 
-// Vercel serverless handler
+// Handler serverless Vercel
 module.exports = async (req, res) => {
   await connectDB();
-  return app(req, res);
+  app(req, res);
 };

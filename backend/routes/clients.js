@@ -1,7 +1,7 @@
+import express from 'express';
+import Client from '../models/Client.js';
 
-const express = require('express');
 const router = express.Router();
-const Client = require('../models/Client');
 
 // GET /api/clients - Get all clients
 router.get('/', async (req, res) => {
@@ -71,4 +71,4 @@ router.delete('/:id', async (req, res) => {
   }
 });
 
-module.exports = router;
+export default router;
