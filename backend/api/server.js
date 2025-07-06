@@ -18,7 +18,7 @@ app.use('/api/settings', require('./routes/settings'));
 app.use('/api/reminders', require('./routes/reminders'));
 app.use('/api', require('./routes/email'));
 
-// MongoDB connection (connect once per execution)
+// MongoDB connection cache
 let cachedDb = null;
 async function connectDB() {
   if (cachedDb) return cachedDb;
@@ -30,11 +30,10 @@ async function connectDB() {
   return cachedDb;
 }
 
-// Main entry point for Vercel serverless
-module.exports = async (req, res) => {
+// Vercel serverless handler
+const handler = async (req, res) => {
   await connectDB();
-  return app(req, res);
+  app(req, res);
 };
 
-// Exporter l'app comme handler serverless
-module.exports = app;
+module.exports = handler;
