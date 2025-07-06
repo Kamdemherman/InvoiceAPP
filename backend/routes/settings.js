@@ -1,44 +1,8 @@
 
 const express = require('express');
 const router = express.Router();
-const multer = require('multer');
-const path = require('path');
-const fs = require('fs');
 const CompanySettings = require('../models/CompanySettings');
 const UserSettings = require('../models/UserSettings');
-
-// Configuration de multer pour l'upload de fichiers
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    const uploadDir = 'uploads/logos/';
-    if (!fs.existsSync(uploadDir)) {
-      fs.mkdirSync(uploadDir, { recursive: true });
-    }
-    cb(null, uploadDir);
-  },
-  filename: (req, file, cb) => {
-    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
-    cb(null, 'logo-' + uniqueSuffix + path.extname(file.originalname));
-  }
-});
-
-const upload = multer({
-  storage: storage,
-  limits: {
-    fileSize: 5 * 1024 * 1024 // 5MB limite
-  },
-  fileFilter: (req, file, cb) => {
-    const allowedTypes = /jpeg|jpg|png|gif|webp/;
-    const extname = allowedTypes.test(path.extname(file.originalname).toLowerCase());
-    const mimetype = allowedTypes.test(file.mimetype);
-    
-    if (extname && mimetype) {
-      return cb(null, true);
-    } else {
-      cb(new Error('Seules les images sont autorisées (jpeg, jpg, png, gif, webp)'));
-    }
-  }
-});
 
 // Routes pour les paramètres d'entreprise
 router.get('/company', async (req, res) => {
@@ -53,7 +17,7 @@ router.get('/company', async (req, res) => {
         invoicePrefix: 'FAC',
         paymentDelay: 30,
         defaultVatRate: 20,
-        currency: 'FCFA'
+        currency: 'EUR'
       });
       await companySettings.save();
     }
@@ -121,37 +85,6 @@ router.put('/user', async (req, res) => {
   } catch (error) {
     console.error('Erreur lors de la mise à jour des paramètres utilisateur:', error);
     res.status(400).json({ message: error.message });
-  }
-});
-
-// Route pour l'upload de logo
-router.post('/upload-logo', upload.single('logo'), async (req, res) => {
-  try {
-    if (!req.file) {
-      return res.status(400).json({ message: 'Aucun fichier fourni' });
-    }
-
-    const logoUrl = `/uploads/logos/${req.file.filename}`;
-    
-    // Mettre à jour les paramètres d'entreprise avec le nouveau logo
-    let companySettings = await CompanySettings.findOne();
-    if (companySettings) {
-      // Supprimer l'ancien logo s'il existe
-      if (companySettings.logo) {
-        const oldLogoPath = path.join(__dirname, '..', companySettings.logo);
-        if (fs.existsSync(oldLogoPath)) {
-          fs.unlinkSync(oldLogoPath);
-        }
-      }
-      
-      companySettings.logo = logoUrl;
-      await companySettings.save();
-    }
-
-    res.json({ logoUrl });
-  } catch (error) {
-    console.error('Erreur lors de l\'upload du logo:', error);
-    res.status(500).json({ message: error.message });
   }
 });
 

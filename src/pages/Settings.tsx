@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/layout/AppSidebar";
@@ -49,7 +48,7 @@ const Settings = () => {
         invoicePrefix: companySettings.invoicePrefix || 'FAC',
         paymentDelay: companySettings.paymentDelay || 30,
         defaultVatRate: companySettings.defaultVatRate || 20,
-        currency: companySettings.currency || 'FCFA',
+        currency: companySettings.currency || 'EUR',
         legalMentions: companySettings.legalMentions || ''
       });
     }
@@ -155,7 +154,7 @@ const Settings = () => {
                         <div className="mt-2 flex items-center space-x-4">
                           {companySettings?.logo && (
                             <img
-                              src={`http://localhost:5000${companySettings.logo}`}
+                              src={companySettings.logo}
                               alt="Logo"
                               className="w-16 h-16 object-contain border rounded"
                             />
@@ -172,12 +171,18 @@ const Settings = () => {
                               type="button"
                               variant="outline"
                               onClick={() => document.getElementById('logo')?.click()}
+                              disabled={uploadLogoMutation.isPending}
                             >
                               <Upload className="w-4 h-4 mr-2" />
-                              Télécharger un logo
+                              {uploadLogoMutation.isPending ? 'Upload en cours...' : 'Télécharger un logo'}
                             </Button>
                           </div>
                         </div>
+                        {uploadLogoMutation.isPending && (
+                          <p className="text-sm text-gray-500 mt-2">
+                            Upload en cours vers Cloudinary...
+                          </p>
+                        )}
                       </div>
 
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">

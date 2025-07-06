@@ -1,3 +1,6 @@
+
+import { cloudinaryAPI } from './cloudinaryAPI';
+
 const API_BASE_URL = 'http://localhost:5000/api';
 
 export interface CompanySettings {
@@ -73,18 +76,18 @@ export const settingsAPI = {
     return response.json();
   },
 
-  // Logo upload
+  // Logo upload via Cloudinary
   uploadLogo: async (file: File): Promise<{ logoUrl: string }> => {
-    const formData = new FormData();
-    formData.append('logo', file);
-
-    const response = await fetch(`${API_BASE_URL}/settings/upload-logo`, {
-      method: 'POST',
-      body: formData,
-    });
-    if (!response.ok) {
-      throw new Error('Failed to upload logo');
+    try {
+      // Upload vers Cloudinary
+      const result = await cloudinaryAPI.uploadImage(file);
+      
+      // Mettre à jour les paramètres d'entreprise avec la nouvelle URL
+      await settingsAPI.updateCompanySettings({ logo: result.secure_url });
+      
+      return { logoUrl: result.secure_url };
+    } catch (error) {
+      throw new Error('Erreur lors de l\'upload du logo vers Cloudinary');
     }
-    return response.json();
   },
 };
