@@ -1,7 +1,6 @@
-import express from 'express';
-import Invoice from '../models/Invoice.js';
-
+const express = require('express');
 const router = express.Router();
+const Invoice = require('../models/Invoice');
 
 // GET /api/invoices - Get all invoices
 router.get('/', async (req, res) => {
@@ -36,14 +35,15 @@ router.post('/', async (req, res) => {
   try {
     console.log('Creating invoice with data:', req.body);
     
+    // S'assurer que le champ number n'est pas inclus pour les nouvelles factures
     const invoiceData = { ...req.body };
-    delete invoiceData.number;
-
+    delete invoiceData.number; // Supprimer le champ number pour laisser le middleware le générer
+    
     const invoice = new Invoice(invoiceData);
     const savedInvoice = await invoice.save();
-
+    
     console.log('Invoice created with number:', savedInvoice.number);
-
+    
     await savedInvoice.populate('client', 'name email');
     await savedInvoice.populate('items.product', 'name');
     res.status(201).json(savedInvoice);
@@ -57,35 +57,40 @@ router.post('/', async (req, res) => {
 router.post('/:id/convert-to-final', async (req, res) => {
   try {
     const proforma = await Invoice.findById(req.params.id);
+    
     if (!proforma) {
       return res.status(404).json({ message: 'Pro-forma not found' });
     }
+    
     if (proforma.type !== 'proforma') {
       return res.status(400).json({ message: 'Invoice is not a pro-forma' });
     }
+    
     if (proforma.convertedToFinal) {
       return res.status(400).json({ message: 'Pro-forma already converted' });
     }
-
+    
+    // Créer une nouvelle facture finale basée sur la pro-forma
     const finalInvoiceData = {
       ...proforma.toObject(),
       _id: undefined,
-      number: undefined,
+      number: undefined, // Laisser le middleware générer un nouveau numéro
       type: 'final',
       createdAt: undefined,
       updatedAt: undefined
     };
-
+    
     const finalInvoice = new Invoice(finalInvoiceData);
     const savedFinalInvoice = await finalInvoice.save();
-
+    
+    // Marquer la pro-forma comme convertie
     proforma.convertedToFinal = true;
     proforma.finalInvoiceId = savedFinalInvoice._id;
     await proforma.save();
-
+    
     await savedFinalInvoice.populate('client', 'name email');
     await savedFinalInvoice.populate('items.product', 'name');
-
+    
     res.status(201).json(savedFinalInvoice);
   } catch (error) {
     console.error('Error converting pro-forma:', error);
@@ -101,9 +106,9 @@ router.put('/:id', async (req, res) => {
       req.body,
       { new: true, runValidators: true }
     )
-      .populate('client', 'name email')
-      .populate('items.product', 'name');
-
+    .populate('client', 'name email')
+    .populate('items.product', 'name');
+    
     if (!invoice) {
       return res.status(404).json({ message: 'Invoice not found' });
     }
@@ -135,7 +140,7 @@ router.patch('/:id/status', async (req, res) => {
       { status },
       { new: true, runValidators: true }
     );
-
+    
     if (!invoice) {
       return res.status(404).json({ message: 'Invoice not found' });
     }
@@ -145,4 +150,4 @@ router.patch('/:id/status', async (req, res) => {
   }
 });
 
-export default router;
+module.exports = router;

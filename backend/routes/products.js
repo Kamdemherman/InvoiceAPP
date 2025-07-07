@@ -1,7 +1,7 @@
-import express from 'express';
-import Product from '../models/Product.js';
 
+const express = require('express');
 const router = express.Router();
+const Product = require('../models/Product');
 
 // GET /api/products - Get all products
 router.get('/', async (req, res) => {
@@ -12,6 +12,7 @@ router.get('/', async (req, res) => {
     res.status(500).json({ message: error.message });
   }
 });
+
 
 // GET /api/products/:id - Get product by ID
 router.get('/:id', async (req, res) => {
@@ -67,4 +68,4 @@ router.delete('/:id', async (req, res) => {
   }
 });
 
-export default router;
+module.exports = router;

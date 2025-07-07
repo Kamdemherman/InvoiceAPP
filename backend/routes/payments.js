@@ -1,8 +1,7 @@
-import express from 'express';
-import Payment from '../models/Payment.js';
-import Invoice from '../models/Invoice.js';
-
+const express = require('express');
 const router = express.Router();
+const Payment = require('../models/Payment');
+const Invoice = require('../models/Invoice');
 
 // GET /api/payments - Get all payments
 router.get('/', async (req, res) => {
@@ -19,7 +18,8 @@ router.get('/', async (req, res) => {
 // GET /api/payments/:id - Get payment by ID
 router.get('/:id', async (req, res) => {
   try {
-    const payment = await Payment.findById(req.params.id).populate('invoice');
+    const payment = await Payment.findById(req.params.id)
+      .populate('invoice');
     if (!payment) {
       return res.status(404).json({ message: 'Payment not found' });
     }
@@ -35,8 +35,8 @@ router.post('/', async (req, res) => {
     const payment = new Payment(req.body);
     const savedPayment = await payment.save();
     await savedPayment.populate('invoice', 'number clientName total');
-
-    // Marquer la facture comme payée si paiement complet
+    
+    // Marquer automatiquement la facture comme payée si le paiement est complet
     if (savedPayment.status === 'completed' && savedPayment.invoice) {
       const invoice = await Invoice.findById(savedPayment.invoiceId);
       if (invoice && savedPayment.amount >= invoice.total) {
@@ -46,7 +46,7 @@ router.post('/', async (req, res) => {
         console.log(`Facture ${invoice.number} automatiquement marquée comme payée`);
       }
     }
-
+    
     res.status(201).json(savedPayment);
   } catch (error) {
     res.status(400).json({ message: error.message });
@@ -61,11 +61,12 @@ router.put('/:id', async (req, res) => {
       req.body,
       { new: true, runValidators: true }
     ).populate('invoice', 'number clientName total');
-
+    
     if (!payment) {
       return res.status(404).json({ message: 'Payment not found' });
     }
 
+    // Vérifier si la facture doit être marquée comme payée
     if (payment.status === 'completed' && payment.invoice) {
       const invoice = await Invoice.findById(payment.invoiceId);
       if (invoice && payment.amount >= invoice.total) {
@@ -75,7 +76,7 @@ router.put('/:id', async (req, res) => {
         console.log(`Facture ${invoice.number} automatiquement marquée comme payée`);
       }
     }
-
+    
     res.json(payment);
   } catch (error) {
     res.status(400).json({ message: error.message });
@@ -95,4 +96,4 @@ router.delete('/:id', async (req, res) => {
   }
 });
 
-export default router;
+module.exports = router;
