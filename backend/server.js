@@ -11,9 +11,8 @@ const app = express();
 const corsOptions = {
   origin: [
     'http://localhost:3000',
-    'http://localhost:5173',
-    'https://facturez.vercel.app',
     'http://localhost:8080',
+    'https://facturez.vercel.app',
     // 'https://772b5000-5af6-43e9-9d0a-5eb942a26170.lovableproject.com'
   ],
   credentials: true,
@@ -37,22 +36,32 @@ app.use('/api/settings', require('./routes/settings'));
 app.use('/api/reminders', require('./routes/reminders'));
 app.use('/api', require('./routes/email'));
 
-// MongoDB Connection avec gestion des environnements
+// MongoDB Connection avec gestion des environnements - OPTIONS SUPPRIMÉES
 const connectDB = async () => {
   try {
-    const mongoURI = process.env.MONGODB_URI || 'mongodb://localhost:27017/factureDb';
+    const mongoURI = process.env.MONGODB_URI;
     
-    await mongoose.connect(mongoURI, {
-      useNewUrlParser: true,
-      useUnifiedTopology: true,
-    });
+    if (!mongoURI) {
+      throw new Error('MONGODB_URI environment variable is not defined');
+    }
+    
+    console.log('🔄 Connecting to MongoDB...');
+    console.log('🌍 Environment:', process.env.NODE_ENV || 'development');
+    
+    // Connexion sans les options dépréciées
+    await mongoose.connect(mongoURI);
     
     console.log('✅ Connected to MongoDB');
-    console.log('🌍 Environment:', process.env.NODE_ENV || 'development');
     console.log('📊 Database:', mongoose.connection.name);
   } catch (error) {
-    console.error('❌ MongoDB connection error:', error);
-    process.exit(1);
+    console.error('❌ MongoDB connection error:', error.message);
+    console.error('🔍 Check your MONGODB_URI environment variable');
+    console.error('🔍 Verify your MongoDB Atlas credentials and network access');
+    
+    // Ne pas quitter le processus immédiatement, laisser Railway redémarrer
+    setTimeout(() => {
+      process.exit(1);
+    }, 5000);
   }
 };
 
