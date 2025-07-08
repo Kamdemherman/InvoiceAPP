@@ -70,7 +70,7 @@ export function AppSidebar() {
       <SidebarHeader className="p-6 border-b border-gray-100">
         <div className="flex items-center space-x-3 mb-4">
            <img 
-        src="/uploads/logos/logo-1751438855821-921058654.png" 
+        src="https://res.cloudinary.com/dh0ymxrfe/image/upload/v1751978047/jes2ic5phx8rga4kthsr.png" 
         alt="Logo Invoice App" 
         className="w-10 h-10" 
       />

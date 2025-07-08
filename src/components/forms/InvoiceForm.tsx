@@ -287,7 +287,7 @@ export const InvoiceForm = ({ open, onOpenChange, invoice, onSubmit }: InvoiceFo
                         <SelectContent>
                           {products.map((product: Product) => (
                             <SelectItem key={product._id} value={product._id}>
-                              {product.name} - {product.price.toFixed(2)} €
+                              {product.name} - {product.price.toFixed(2)} FCFA
                             </SelectItem>
                           ))}
                         </SelectContent>
