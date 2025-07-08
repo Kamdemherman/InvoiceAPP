@@ -1,13 +1,19 @@
+
 const express = require('express');
 const mongoose = require('mongoose');
 const cors = require('cors');
 const path = require('path');
+require('dotenv').config();
 
 const app = express();
 
+// Middleware
 app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+
+// Servir les fichiers statiques (logos) - Note: sur Vercel, utilisez Cloudinary
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 // Routes
 app.use('/api/clients', require('./routes/clients'));
@@ -18,39 +24,56 @@ app.use('/api/settings', require('./routes/settings'));
 app.use('/api/reminders', require('./routes/reminders'));
 app.use('/api', require('./routes/email'));
 
-app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+// MongoDB Connection avec gestion des environnements
+const connectDB = async () => {
+  try {
+    const mongoURI = process.env.MONGODB_URI || 'mongodb://localhost:27017/invoice-app';
+    
+    await mongoose.connect(mongoURI, {
+      useNewUrlParser: true,
+      useUnifiedTopology: true,
+    });
+    
+    console.log('✅ Connected to MongoDB');
+    console.log('🌍 Environment:', process.env.NODE_ENV || 'development');
+    console.log('📊 Database:', mongoose.connection.name);
+  } catch (error) {
+    console.error('❌ MongoDB connection error:', error);
+    process.exit(1);
+  }
+};
 
-// Test route
+connectDB();
+
+// Basic route
 app.get('/', (req, res) => {
-  res.json({
-    message: 'Invoice Management API',
+  res.json({ 
+    message: 'Invoice Management API', 
     version: '1.0.0',
+    environment: process.env.NODE_ENV || 'development',
+    database: mongoose.connection.readyState === 1 ? '✅ Connected' : '❌ Disconnected',
+    endpoints: {
+      clients: '/api/clients',
+      products: '/api/products', 
+      invoices: '/api/invoices',
+      payments: '/api/payments',
+      settings: '/api/settings',
+      reminders: '/api/reminders'
+    }
   });
 });
 
-// MongoDB URI
-const MONGODB_URI = 'mongodb+srv://kamdemherman9:Hermansteve99%40@cluster0.egvl4l5.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0';
-
-// MongoDB connection sans options obsolètes
-mongoose.connect(MONGODB_URI)
-  .then(() => console.log('✅ Connected to MongoDB'))
-  .catch((error) => {
-    console.error('❌ MongoDB connection error:', error.message);
-    process.exit(1);
-  });
+// Error handling middleware
+app.use((err, req, res, next) => {
+  console.error(err.stack);
+  res.status(500).json({ message: 'Something went wrong!' });
+});
 
 // 404 handler
 app.use('*', (req, res) => {
   res.status(404).json({ message: 'Route not found' });
 });
 
-// Error handler
-app.use((err, req, res, next) => {
-  console.error(err.stack);
-  res.status(500).json({ message: 'Something went wrong!' });
-});
-
-// Start server
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
   console.log(`🚀 Server running on port ${PORT}`);

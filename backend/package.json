@@ -12,10 +12,15 @@
     "nodejs",
     "express",
     "mongodb",
-    "api"
+    "api",
+    "railway"
   ],
   "author": "",
   "license": "ISC",
+  "engines": {
+    "node": ">=18.0.0",
+    "npm": ">=8.0.0"
+  },
   "dependencies": {
     "@sendgrid/mail": "^8.1.5",
     "bcryptjs": "^2.4.3",

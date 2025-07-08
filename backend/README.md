@@ -10,7 +10,42 @@ Backend API pour l'application de gestion de facturation.
 - **MongoDB** - Base de données NoSQL
 - **Mongoose** - ODM pour MongoDB
 
-## Installation
+## Déploiement sur Railway
+
+### 1. Préparation
+
+1. Créer un compte sur [Railway](https://railway.app)
+2. Connecter votre repository GitHub
+
+### 2. Déploiement
+
+1. Sur Railway, cliquer sur "New Project"
+2. Sélectionner "Deploy from GitHub repo"
+3. Choisir votre repository
+4. Railway détectera automatiquement votre backend Node.js
+
+### 3. Configuration des variables d'environnement
+
+Dans Railway, ajouter ces variables d'environnement :
+
+```
+MONGODB_URI=mongodb+srv://username:password@cluster.mongodb.net/invoice-app?retryWrites=true&w=majority
+NODE_ENV=production
+PORT=5000
+```
+
+### 4. Configuration MongoDB Atlas
+
+1. Créer un cluster sur [MongoDB Atlas](https://cloud.mongodb.com)
+2. Créer un utilisateur de base de données
+3. Whitelist l'IP 0.0.0.0/0 (pour Railway)
+4. Copier la connection string dans MONGODB_URI
+
+### 5. Domaine personnalisé (optionnel)
+
+Railway génère automatiquement un domaine. Vous pouvez utiliser un domaine personnalisé dans les paramètres du projet.
+
+## Installation locale
 
 1. Naviguer vers le dossier backend :
 ```bash
@@ -23,11 +58,9 @@ npm install
 ```
 
 3. Configurer les variables d'environnement :
-Copier `.env` et modifier les valeurs selon votre configuration.
+Copier `.env.example` vers `.env` et modifier les valeurs.
 
-4. Démarrer MongoDB localement ou configurer une connexion cloud.
-
-5. Démarrer le serveur :
+4. Démarrer le serveur :
 ```bash
 # Mode développement avec nodemon
 npm run dev
@@ -75,12 +108,18 @@ backend/
 ├── routes/          # Routes API Express
 ├── server.js        # Point d'entrée du serveur
 ├── package.json     # Dépendances et scripts
-└── .env            # Variables d'environnement
+├── railway.json     # Configuration Railway
+├── Dockerfile       # Configuration Docker
+└── .env.example     # Exemple de variables d'environnement
 ```
 
 ## Variables d'environnement
 
 - `PORT` - Port du serveur (défaut: 5000)
-- `MONGODB_URI` - URI de connexion MongoDB
-- `JWT_SECRET` - Clé secrète pour JWT
+- `MONGODB_URI` - URI de connexion MongoDB Atlas
 - `NODE_ENV` - Environnement (development/production)
+
+## Support
+
+- [Documentation Railway](https://docs.railway.app/)
+- [Documentation MongoDB Atlas](https://docs.atlas.mongodb.com/)
