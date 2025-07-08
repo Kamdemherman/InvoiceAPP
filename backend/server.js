@@ -27,7 +27,7 @@ app.use('/api', require('./routes/email'));
 // MongoDB Connection avec gestion des environnements
 const connectDB = async () => {
   try {
-    const mongoURI = process.env.MONGODB_URI || 'mongodb://localhost:27017/invoice-app';
+    const mongoURI = process.env.MONGODB_URI || 'mongodb://localhost:27017/factureDb';
     
     await mongoose.connect(mongoURI, {
       useNewUrlParser: true,
