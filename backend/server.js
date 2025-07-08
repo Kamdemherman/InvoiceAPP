@@ -7,12 +7,25 @@ require('dotenv').config();
 
 const app = express();
 
+// Configuration CORS pour autoriser votre frontend Vercel
+const corsOptions = {
+  origin: [
+    'http://localhost:3000',
+    'http://localhost:5173',
+    'https://facturez.vercel.app',
+    'http://localhost:8080',
+    // 'https://772b5000-5af6-43e9-9d0a-5eb942a26170.lovableproject.com'
+  ],
+  credentials: true,
+  optionsSuccessStatus: 200
+};
+
 // Middleware
-app.use(cors());
+app.use(cors(corsOptions));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// Servir les fichiers statiques (logos) - Note: sur Vercel, utilisez Cloudinary
+// Servir les fichiers statiques (logos) - Note: sur Railway/Vercel, utilisez Cloudinary
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 // Routes
