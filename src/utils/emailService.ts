@@ -96,7 +96,7 @@ export const sendInvoiceByEmail = async (invoice: Invoice, client: Client): Prom
     };
 
     // Envoyer l'email via le backend
-    const response = await fetch('http://localhost:5000/api/send-email', {
+    const response = await fetch('https://facturez-backend.up.railway.app/api/send-email', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

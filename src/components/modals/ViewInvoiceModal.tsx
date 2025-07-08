@@ -147,9 +147,6 @@ export const ViewInvoiceModal = ({ open, onOpenChange, invoice }: ViewInvoiceMod
             <Button variant="outline" onClick={() => onOpenChange(false)}>
               Fermer
             </Button>
-            <Button>
-              Télécharger PDF
-            </Button>
           </div>
         </div>
       </DialogContent>
