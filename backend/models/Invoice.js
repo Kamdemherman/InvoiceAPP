@@ -1,4 +1,3 @@
-
 const mongoose = require('mongoose');
 
 const invoiceItemSchema = new mongoose.Schema({
@@ -80,7 +79,7 @@ const invoiceSchema = new mongoose.Schema({
   status: {
     type: String,
     required: true,
-    enum: ['draft', 'sent', 'paid', 'overdue'],
+    enum: ['draft', 'sent', 'paid', 'partially_paid', 'overdue'],
     default: 'draft'
   },
   paymentDate: {

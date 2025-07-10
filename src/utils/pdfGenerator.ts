@@ -1,3 +1,4 @@
+
 import { Invoice, Client } from "@/types";
 import { settingsAPI, CompanySettings } from "@/services/settingsAPI";
 
@@ -5,6 +6,21 @@ export const generateInvoicePDF = async (invoice: Invoice, client: Client): Prom
   try {
     // Récupérer les paramètres de l'entreprise
     const companySettings: CompanySettings = await settingsAPI.getCompanySettings();
+    
+    // Gérer l'URL du logo avec fallback
+    const getLogoUrl = (logoUrl?: string) => {
+      if (!logoUrl) return '';
+      
+      // Si c'est déjà une URL complète Cloudinary, l'utiliser directement
+      if (logoUrl.startsWith('https://res.cloudinary.com') || logoUrl.startsWith('http')) {
+        return logoUrl;
+      }
+      
+      // Sinon, construire l'URL complète
+      return `${window.location.origin}${logoUrl}`;
+    };
+
+    const logoUrl = getLogoUrl(companySettings.logo);
     
     // Créer le contenu HTML de la facture
     const htmlContent = `
@@ -18,7 +34,15 @@ export const generateInvoicePDF = async (invoice: Invoice, client: Client): Prom
           .header { display: flex; justify-content: space-between; margin-bottom: 30px; }
           .company-info { flex: 1; }
           .invoice-info { flex: 1; text-align: right; }
-          .company-logo { width: 100px; height: auto; margin-bottom: 15px; }
+          .company-logo { 
+            width: 100px; 
+            height: auto; 
+            margin-bottom: 15px; 
+            display: block;
+          }
+          .company-logo-error {
+            display: none;
+          }
           .client-info { margin-bottom: 30px; }
           .items-table { width: 100%; border-collapse: collapse; margin-bottom: 30px; }
           .items-table th, .items-table td { border: 1px solid #ddd; padding: 8px; text-align: left; }
@@ -26,16 +50,28 @@ export const generateInvoicePDF = async (invoice: Invoice, client: Client): Prom
           .totals { text-align: right; margin-top: 20px; }
           .total-line { margin: 5px 0; }
           .total-final { font-weight: bold; font-size: 1.2em; }
+          @media print {
+            .company-logo { max-width: 80px; }
+          }
         </style>
       </head>
       <body>
         <div class="header">
           <div class="company-info">
-            ${companySettings.logo ? `<img src="${window.location.origin}${companySettings.logo}" alt="Logo" class="company-logo" />` : ''}
-            <h1>${companySettings.companyName}</h1>
+            ${logoUrl ? `
+              <img src="${logoUrl}" alt="Logo ${companySettings.companyName}" 
+                   class="company-logo" 
+                   onerror="this.style.display='none'; document.querySelector('.company-fallback').style.display='block';" />
+              <div class="company-fallback" style="display: none;">
+                <h2 style="margin: 0; color: #333;">${companySettings.companyName}</h2>
+              </div>
+            ` : `
+              <h2 style="margin: 0; color: #333;">${companySettings.companyName}</h2>
+            `}
+            <h1 style="margin-top: 10px;">${companySettings.companyName}</h1>
             <p>${companySettings.address}</p>
-            ${companySettings.siret ? `<p>Email: ${companySettings.siret}</p>` : ''}
-            ${companySettings.vatNumber ? `<p>Telephone: ${companySettings.vatNumber}</p>` : ''}
+            ${companySettings.siret ? `<p>SIRET: ${companySettings.siret}</p>` : ''}
+            ${companySettings.vatNumber ? `<p>TVA: ${companySettings.vatNumber}</p>` : ''}
           </div>
           <div class="invoice-info">
             <h2>FACTURE</h2>
@@ -69,17 +105,17 @@ export const generateInvoicePDF = async (invoice: Invoice, client: Client): Prom
               <tr>
                 <td>${item.productName}</td>
                 <td>${item.quantity}</td>
-                <td>${item.unitPrice.toFixed(2)} ${companySettings.currency === 'FCFA' ? 'FCFA' : companySettings.currency}</td>
-                <td>${item.total.toFixed(2)} ${companySettings.currency === 'FCFA' ? 'FCFA' : companySettings.currency}</td>
+                <td>${item.unitPrice.toFixed(2)} ${companySettings.currency === 'EUR' ? '€' : companySettings.currency}</td>
+                <td>${item.total.toFixed(2)} ${companySettings.currency === 'EUR' ? '€' : companySettings.currency}</td>
               </tr>
             `).join('')}
           </tbody>
         </table>
 
         <div class="totals">
-          <div class="total-line">Sous-total: ${invoice.subtotal.toFixed(2)} ${companySettings.currency === 'FCFA' ? 'FCFA' : companySettings.currency}</div>
-          <div class="total-line">TVA (${companySettings.defaultVatRate}%): ${invoice.tax.toFixed(2)} ${companySettings.currency === 'FCFA' ? 'FCFA' : companySettings.currency}</div>
-          <div class="total-line total-final">Total: ${invoice.total.toFixed(2)} ${companySettings.currency === 'FCFA' ? 'FCFA' : companySettings.currency}</div>
+          <div class="total-line">Sous-total: ${invoice.subtotal.toFixed(2)} ${companySettings.currency === 'EUR' ? '€' : companySettings.currency}</div>
+          <div class="total-line">TVA (${companySettings.defaultVatRate}%): ${invoice.tax.toFixed(2)} ${companySettings.currency === 'EUR' ? '€' : companySettings.currency}</div>
+          <div class="total-line total-final">Total: ${invoice.total.toFixed(2)} ${companySettings.currency === 'EUR' ? '€' : companySettings.currency}</div>
         </div>
 
         ${invoice.notes ? `

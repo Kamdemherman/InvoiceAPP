@@ -29,21 +29,39 @@ router.get('/:id', async (req, res) => {
   }
 });
 
-// POST /api/payments - Create new payment
+// POST /api/payments - Create new payment with partial payment handling
 router.post('/', async (req, res) => {
   try {
     const payment = new Payment(req.body);
     const savedPayment = await payment.save();
     await savedPayment.populate('invoice', 'number clientName total');
     
-    // Marquer automatiquement la facture comme payée si le paiement est complet
+    // Gestion des paiements complets et partiels
     if (savedPayment.status === 'completed' && savedPayment.invoice) {
       const invoice = await Invoice.findById(savedPayment.invoiceId);
-      if (invoice && savedPayment.amount >= invoice.total) {
-        invoice.status = 'paid';
-        invoice.paymentDate = savedPayment.date;
-        await invoice.save();
-        console.log(`Facture ${invoice.number} automatiquement marquée comme payée`);
+      if (invoice) {
+        // Calculer le total des paiements pour cette facture
+        const allPayments = await Payment.find({
+          invoiceId: savedPayment.invoiceId,
+          status: 'completed'
+        });
+        
+        const totalPaid = allPayments.reduce((sum, p) => sum + p.amount, 0);
+        
+        console.log(`Facture ${invoice.number}: Total facturé: ${invoice.total}€, Total payé: ${totalPaid}€`);
+        
+        if (totalPaid >= invoice.total) {
+          // Paiement complet
+          invoice.status = 'paid';
+          invoice.paymentDate = savedPayment.date;
+          await invoice.save();
+          console.log(`✅ Facture ${invoice.number} complètement payée`);
+        } else {
+          // Paiement partiel - créer un nouveau statut si nécessaire
+          invoice.status = 'partially_paid';
+          await invoice.save();
+          console.log(`🔶 Facture ${invoice.number} partiellement payée (${totalPaid}€/${invoice.total}€)`);
+        }
       }
     }
     
@@ -53,7 +71,7 @@ router.post('/', async (req, res) => {
   }
 });
 
-// PUT /api/payments/:id - Update payment
+// PUT /api/payments/:id - Update payment with partial payment handling
 router.put('/:id', async (req, res) => {
   try {
     const payment = await Payment.findByIdAndUpdate(
@@ -66,20 +84,57 @@ router.put('/:id', async (req, res) => {
       return res.status(404).json({ message: 'Payment not found' });
     }
 
-    // Vérifier si la facture doit être marquée comme payée
-    if (payment.status === 'completed' && payment.invoice) {
+    // Recalculer le statut de la facture après modification du paiement
+    if (payment.invoice) {
       const invoice = await Invoice.findById(payment.invoiceId);
-      if (invoice && payment.amount >= invoice.total) {
-        invoice.status = 'paid';
-        invoice.paymentDate = payment.date;
+      if (invoice) {
+        const allPayments = await Payment.find({
+          invoiceId: payment.invoiceId,
+          status: 'completed'
+        });
+        
+        const totalPaid = allPayments.reduce((sum, p) => sum + p.amount, 0);
+        
+        if (totalPaid >= invoice.total) {
+          invoice.status = 'paid';
+          invoice.paymentDate = payment.date;
+        } else if (totalPaid > 0) {
+          invoice.status = 'partially_paid';
+          invoice.paymentDate = null; // Pas encore complètement payé
+        } else {
+          // Aucun paiement valide, revenir au statut précédent
+          invoice.status = 'sent'; // ou le statut approprié
+          invoice.paymentDate = null;
+        }
+        
         await invoice.save();
-        console.log(`Facture ${invoice.number} automatiquement marquée comme payée`);
+        console.log(`🔄 Statut facture ${invoice.number} mis à jour: ${invoice.status}`);
       }
     }
     
     res.json(payment);
   } catch (error) {
     res.status(400).json({ message: error.message });
+  }
+});
+
+// GET /api/payments/invoice/:invoiceId - Get all payments for a specific invoice
+router.get('/invoice/:invoiceId', async (req, res) => {
+  try {
+    const payments = await Payment.find({ invoiceId: req.params.invoiceId })
+      .sort({ createdAt: -1 });
+    
+    const totalPaid = payments
+      .filter(p => p.status === 'completed')
+      .reduce((sum, p) => sum + p.amount, 0);
+    
+    res.json({
+      payments,
+      totalPaid,
+      paymentCount: payments.length
+    });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
   }
 });
 
