@@ -53,15 +53,15 @@ Frontend
 - Tailwind CSS
 
 Backend 
--Node Js
--Express 
--Mongo DB
--Send Grid
--Cloudinary
+- Node Js
+- Express 
+- Mongo DB
+- Send Grid
+- Cloudinary
 
 ## How can I deploy this project?
 
-Vercel:Frontend
-Railway:Backend 
-MongoDb Online:Database
+- Vercel:Frontend
+- Railway:Backend 
+- MongoDb Online:Database
 
