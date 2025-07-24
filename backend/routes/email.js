@@ -1,9 +1,8 @@
-
 const express = require('express');
 const router = express.Router();
 const Reminder = require('../models/Reminder');
 
-// Route pour envoyer un email (simulation)
+// Route pour envoyer un email 
 router.post('/send-email', async (req, res) => {
   try {
     const { to, subject, html, invoiceData } = req.body;

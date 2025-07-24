@@ -67,7 +67,7 @@ router.get('/company', async (req, res) => {
 router.put('/company', async (req, res) => {
   try {
     let companySettings = await CompanySettings.findOne();
-    
+  
     if (!companySettings) {
       companySettings = new CompanySettings(req.body);
     } else {
